@@ -1,0 +1,475 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block title %}Manage Menu - yoni Fast Food Restaurant{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <!-- Main Content -->
+        <div class="col-lg-9 col-xl-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="fw-bold mb-2">
+                        <i class="fas fa-utensils text-primary me-2"></i>Manage Menu
+                    </h1>
+                    <p class="text-muted mb-0">View and manage all menu items</p>
+                </div>
+                <button class="btn btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#createMenuItemModal">
+                    <i class="fas fa-plus me-2"></i>Add New Item
+                </button>
+                <button class="btn btn-outline-secondary rounded-pill" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                    <i class="fas fa-tags me-2"></i>Manage Categories
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-utensils fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ menu_items.count }}</h3>
+                                    <p class="mb-0 small opacity-75">Total Items</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-tags fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ categories.count }}</h3>
+                                    <p class="mb-0 small opacity-75">Categories</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-fire fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ menu_items|length }}</h3>
+                                    <p class="mb-0 small opacity-75">Available</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-warning text-dark">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-star fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">0</h3>
+                                    <p class="mb-0 small opacity-75">Popular</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Management -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold mb-0">Category Management</h5>
+                        <p class="text-muted mb-0">Add, edit, and delete menu categories</p>
+                    </div>
+                    <button class="btn btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                        <i class="fas fa-plus me-2"></i>Add New Category
+                    </button>
+                </div>
+                <div class="card-body p-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Icon</th>
+                                    <th>Description</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in categories %}
+                                <tr>
+                                    <td class="fw-semibold">{{ category.name }}</td>
+                                    <td><i class="{{ category.icon }} text-primary"></i> {{ category.icon }}</td>
+                                    <td class="text-muted">{{ category.description|default:'No description' }}</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary rounded-pill me-2" data-bs-toggle="modal" data-bs-target="#editCategoryModal{{ category.id }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#deleteCategoryModal{{ category.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if categories|length == 0 %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">No categories available. Add one to organize menu items.</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {% for category in categories %}
+            <div class="modal fade" id="editCategoryModal{{ category.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">Edit Category</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="post" action="{% url 'category_edit' category.id %}">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Name</label>
+                                    <input type="text" name="name" class="form-control" value="{{ category.name }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Icon</label>
+                                    <input type="text" name="icon" class="form-control" value="{{ category.icon }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Description</label>
+                                    <textarea name="description" class="form-control" rows="3">{{ category.description }}</textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary rounded-pill">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="deleteCategoryModal{{ category.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">Delete Category</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="post" action="{% url 'category_delete' category.id %}">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                                <p>Are you sure you want to delete <strong>{{ category.name }}</strong>?</p>
+                                <p class="text-muted">This will remove the category from all related menu items.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger rounded-pill">Delete</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Menu Items Grid -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0">All Menu Items</h5>
+                        <div class="input-group" style="max-width: 300px;">
+                            <input type="text" class="form-control rounded-pill" placeholder="Search items..." id="searchInput">
+                            <span class="input-group-text bg-transparent border-0">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        {% for item in menu_items %}
+                        <div class="col-md-6 col-lg-4 menu-item-card">
+                            <div class="card border-0 shadow-sm h-100">
+                                {% if item.image %}
+                                    <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}" style="height: 180px; object-fit: cover;">
+                                {% else %}
+                                    <div class="card-img-top d-flex align-items-center justify-content-center" style="height: 180px; background: linear-gradient(135deg, #6a1b9a 0%, #2196f3 100%);">
+                                        <i class="fas fa-utensils fa-3x text-white"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="fw-bold mb-0">{{ item.name }}</h6>
+                                        {% if item.is_popular %}
+                                            <span class="badge bg-warning text-dark">Popular</span>
+                                        {% elif item.is_new %}
+                                            <span class="badge bg-success">New</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-muted small mb-2">{{ item.description|truncatewords:10 }}</p>
+                                    <p class="mb-2">
+                                        <span class="badge bg-secondary">{{ item.category.name }}</span>
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="fw-bold text-primary mb-0">Le {{ item.price|floatformat:0|intcomma }}</h5>
+                                        {% if item.is_available %}
+                                            <span class="badge bg-success">Available</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Unavailable</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill flex-fill" data-bs-toggle="modal" data-bs-target="#editMenuItemModal{{ item.id }}">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill flex-fill" data-bs-toggle="modal" data-bs-target="#deleteMenuItemModal{{ item.id }}">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12 text-center py-5">
+                            <i class="fas fa-utensils fa-4x text-muted mb-3"></i>
+                            <p class="text-muted">No menu items found</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {% for item in menu_items %}
+            <div class="modal fade" id="editMenuItemModal{{ item.id }}" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">Edit Menu Item</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="post" action="{% url 'menu_item_edit' item.id %}" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Restaurant</label>
+                                        <select name="restaurant" class="form-select" required>
+                                            {% for restaurant in restaurants %}
+                                            <option value="{{ restaurant.id }}" {% if item.restaurant.id == restaurant.id %}selected{% endif %}>{{ restaurant.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Category</label>
+                                        <select name="category" class="form-select" required>
+                                            {% for category in categories %}
+                                            <option value="{{ category.id }}" {% if item.category and item.category.id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Name</label>
+                                        <input type="text" name="name" class="form-control" value="{{ item.name }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Price</label>
+                                        <input type="number" name="price" class="form-control" value="{{ item.price }}" step="0.01" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Description</label>
+                                        <textarea name="description" class="form-control" rows="3" required>{{ item.description }}</textarea>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="is_available" class="form-check-input" id="available{{ item.id }}" {% if item.is_available %}checked{% endif %}>
+                                            <label class="form-check-label" for="available{{ item.id }}">Available</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="is_popular" class="form-check-input" id="popular{{ item.id }}" {% if item.is_popular %}checked{% endif %}>
+                                            <label class="form-check-label" for="popular{{ item.id }}">Popular</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="is_new" class="form-check-input" id="new{{ item.id }}" {% if item.is_new %}checked{% endif %}>
+                                            <label class="form-check-label" for="new{{ item.id }}">New</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold">Image</label>
+                                        <input type="file" name="image" class="form-control">
+                                        {% if item.image %}
+                                        <p class="small text-muted mt-2">Current image: {{ item.image.name }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary rounded-pill">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="deleteMenuItemModal{{ item.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">Delete Menu Item</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="post" action="{% url 'menu_item_delete' item.id %}">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                                <p>Are you sure you want to delete <strong>{{ item.name }}</strong>?</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger rounded-pill">Delete</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Create Menu Item Modal -->
+<div class="modal fade" id="createMenuItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Add New Menu Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'menu_item_create' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Restaurant</label>
+                            <select name="restaurant" class="form-select" required>
+                                <option value="">Select Restaurant</option>
+                                {% for restaurant in restaurants %}
+                                <option value="{{ restaurant.id }}">{{ restaurant.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Category</label>
+                            <select name="category" class="form-select" required>
+                                <option value="">Select Category</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Price</label>
+                            <input type="number" name="price" class="form-control" step="0.01" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Description</label>
+                            <textarea name="description" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_available" class="form-check-input" id="availableCreate">
+                                <label class="form-check-label" for="availableCreate">Available</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_popular" class="form-check-input" id="popularCreate">
+                                <label class="form-check-label" for="popularCreate">Popular</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_new" class="form-check-input" id="newCreate">
+                                <label class="form-check-label" for="newCreate">New</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Image</label>
+                            <input type="file" name="image" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill">Create Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Add New Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'category_create' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Icon</label>
+                        <input type="text" name="icon" class="form-control" placeholder="fas fa-utensils">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill">Save Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    let filter = this.value.toLowerCase();
+    document.querySelectorAll('.menu-item-card').forEach(card => {
+        card.style.display = card.textContent.toLowerCase().includes(filter) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

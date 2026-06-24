@@ -1,0 +1,208 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block title %}Order Queue - yoni Fast Food Restaurant{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <!-- Main Content -->
+        <div class="col-lg-9 col-xl-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="fw-bold mb-2">
+                        <i class="fas fa-clipboard-list text-primary me-2"></i>Order Queue
+                    </h1>
+                    <p class="text-muted mb-0">Manage incoming and active orders</p>
+                </div>
+                <a href="{% url 'waitress_dashboard' %}" class="btn btn-outline-primary rounded-pill">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-clipboard-list fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ orders.count }}</h3>
+                                    <p class="mb-0 small opacity-75">Active Orders</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">42</h3>
+                                    <p class="mb-0 small opacity-75">Delivered Today</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-warning text-dark">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-clock fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">18m</h3>
+                                    <p class="mb-0 small opacity-75">Avg. Time</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-3">
+                    <div class="d-flex gap-2">
+                        <a href="?status=active" class="btn {% if not status_filter or status_filter == 'active' %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-4">
+                            <i class="fas fa-bolt me-1"></i>Active
+                        </a>
+                        <a href="?status=new" class="btn {% if status_filter == 'new' %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-4">
+                            <i class="fas fa-star me-1"></i>New
+                        </a>
+                        <a href="?status=all" class="btn {% if status_filter == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %} rounded-pill px-4">
+                            <i class="fas fa-list me-1"></i>All Orders
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="mb-3">
+                <div class="input-group">
+                    <input type="text" class="form-control rounded-pill" placeholder="Search orders..." id="searchInput">
+                    <span class="input-group-text bg-transparent border-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Order Cards Grid -->
+            <div class="row g-4">
+                {% for order in orders %}
+                <div class="col-md-6 order-card">
+                    <div class="card border-0 shadow-sm h-100 hover-lift">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="fw-bold mb-1">#{{ order.order_number }}</h5>
+                                    <span class="badge bg-{% if order.status == 'received' %}warning text-dark{% elif order.status == 'preparing' %}info{% elif order.status == 'ready' %}success{% elif order.status == 'on_the_way' %}primary{% elif order.status == 'delivered' %}secondary{% else %}danger{% endif %}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </div>
+                                {% if order.table %}
+                                <span class="badge bg-primary rounded-pill px-3 py-2">
+                                    <i class="fas fa-table me-1"></i>Table {{ order.table.table_number }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <p class="text-muted small mb-1">
+                                    <i class="fas fa-user me-1"></i><strong>Customer:</strong> {{ order.customer.user.username }}
+                                </p>
+                                <p class="text-muted small mb-1">
+                                    <i class="fas fa-utensils me-1"></i>{{ order.items.count }} items
+                                    {% for item in order.items.all|slice:":2" %}
+                                        &bull; {{ item.menu_item.name }}{% if not forloop.last %}{% endif %}
+                                    {% endfor %}
+                                    {% if order.items.count > 2 %}...{% endif %}
+                                </p>
+                                <p class="text-muted small mb-0">
+                                    <i class="fas fa-clock me-1"></i>{{ order.created_at|timesince }} ago
+                                </p>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top flex-wrap gap-2">
+                                <h5 class="fw-bold text-primary mb-0">Le {{ order.total_amount|floatformat:0|intcomma }}</h5>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-outline-primary rounded-pill">
+                                        View Details <i class="fas fa-arrow-right ms-1"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-warning rounded-pill" data-bs-toggle="modal" data-bs-target="#queueOrderStatusModal{{ order.id }}">
+                                        Update Status
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- Update Order Status Modal -->
+            <div class="modal fade" id="queueOrderStatusModal{{ order.id }}" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">Update Order Status</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="post" action="{% url 'order_update_status' order.id %}">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Status</label>
+                                    <select name="status" class="form-select" required>
+                                        <option value="received" {% if order.status == 'received' %}selected{% endif %}>Order Received</option>
+                                        <option value="preparing" {% if order.status == 'preparing' %}selected{% endif %}>Preparing</option>
+                                        <option value="ready" {% if order.status == 'ready' %}selected{% endif %}>Ready for Pickup</option>
+                                        <option value="on_the_way" {% if order.status == 'on_the_way' %}selected{% endif %}>On Its Way</option>
+                                        <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-warning rounded-pill">Update</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                    <h5 class="fw-bold mb-2">No Orders Found</h5>
+                    <p class="text-muted mb-0">There are no orders matching your current filters.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    let filter = this.value.toLowerCase();
+    document.querySelectorAll('.order-card').forEach(card => {
+        card.style.display = card.textContent.toLowerCase().includes(filter) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

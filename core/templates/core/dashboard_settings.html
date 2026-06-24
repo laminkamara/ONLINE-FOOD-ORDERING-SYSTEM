@@ -1,0 +1,75 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Settings - yoni Fast Food Restaurant{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <div class="col-lg-9 col-xl-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="fw-bold mb-2">
+                        <i class="fas fa-cog text-primary me-2"></i>Dashboard Settings
+                    </h1>
+                    <p class="text-muted mb-0">Configure system settings</p>
+                </div>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-primary rounded-pill">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-sliders-h text-primary me-2"></i>System Configuration
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-store me-2 text-primary"></i>Restaurant Name
+                                </label>
+                                <input type="text" class="form-control form-control-lg" value="yoni Fast Food Restaurant" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-phone me-2 text-primary"></i>Contact Phone
+                                </label>
+                                <input type="text" class="form-control form-control-lg" value="+232 32 219512">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-envelope me-2 text-primary"></i>Contact Email
+                                </label>
+                                <input type="email" class="form-control form-control-lg" value="info@yoni.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-money-bill me-2 text-primary"></i>Currency
+                                </label>
+                                <input type="text" class="form-control form-control-lg" value="Le (Sierra Leonean Leone)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-percent me-2 text-primary"></i>Tax Rate (%)
+                                </label>
+                                <input type="number" class="form-control form-control-lg" value="10">
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5">
+                                <i class="fas fa-save me-2"></i>Save Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,175 @@
+<!-- Reusable Sidebar for Dashboards -->
+{% load static %}
+
+<style>
+/* Sidebar styles */
+.sidebar-wrapper {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+.sidebar-card { top: 0; }
+.sidebar-header {
+    background: linear-gradient(135deg, #6a1b9a 0%, #2196f3 100%);
+    border-radius: 15px 15px 0 0;
+}
+.sidebar-avatar {
+    width: 80px;
+    height: 80px;
+}
+
+/* Navigation link base styles */
+.sidebar-nav-link {
+    font-weight: 500;
+    color: #333333 !important;
+    font-size: 0.95rem;
+}
+.sidebar-nav-link:hover {
+    background-color: rgba(106, 27, 154, 0.1) !important;
+}
+.sidebar-nav-link.active {
+    background: rgba(106, 27, 154, 0.15) !important;
+    color: #6a1b9a !important;
+    font-weight: 600;
+}
+
+/* Icon styles */
+.sidebar-nav-link .sidebar-icon {
+    color: #6a1b9a;
+    min-width: 24px;
+    text-align: center;
+}
+.sidebar-nav-link.active .sidebar-icon {
+    color: inherit;
+}
+
+/* Text visibility */
+.sidebar-nav-link span {
+    color: inherit !important;
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Logout link */
+.sidebar-logout {
+    color: #dc3545 !important;
+    font-weight: 600;
+}
+
+/* Prevent text from being hidden */
+.sidebar-nav-link * {
+    display: inline-block !important;
+}
+</style>
+
+<div class="sidebar-wrapper">
+<div class="card border-0 shadow-sm sidebar-card">
+    <div class="card-body p-0">
+        <!-- User Info -->
+        <div class="p-4 border-bottom sidebar-header">
+            <div class="text-center text-white">
+                <div class="bg-white bg-opacity-25 rounded-circle d-inline-flex align-items-center justify-content-center mb-3 sidebar-avatar">
+                    {% if user_role == 'admin' %}
+                        <i class="fas fa-user-shield fa-2x text-white"></i>
+                    {% elif user_role == 'waitress' %}
+                        <i class="fas fa-user-tie fa-2x text-white"></i>
+                    {% else %}
+                        <i class="fas fa-user fa-2x text-white"></i>
+                    {% endif %}
+                </div>
+                <h5 class="fw-bold mb-1 text-white">{{ user.get_full_name|default:user.username }}</h5>
+                <span class="badge bg-white text-primary fw-semibold">
+                    {% if user_role == 'admin' %}Administrator{% elif user_role == 'waitress' %}Staff{% else %}Customer{% endif %}
+                </span>
+            </div>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="nav flex-column p-3">
+            {% if user_role == 'admin' %}
+                <!-- Admin Navigation -->
+                <a href="{% url 'admin_dashboard' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+                    <i class="fas fa-chart-line fa-lg me-3 sidebar-icon"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'manage_users' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}">
+                    <i class="fas fa-users fa-lg me-3 sidebar-icon"></i>
+                    <span>Users</span>
+                </a>
+                <a href="{% url 'manage_menu' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'manage_menu' %}active{% endif %}">
+                    <i class="fas fa-utensils fa-lg me-3 sidebar-icon"></i>
+                    <span>Menu</span>
+                </a>
+                <a href="{% url 'manage_orders' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'manage_orders' %}active{% endif %}">
+                    <i class="fas fa-shopping-bag fa-lg me-3 sidebar-icon"></i>
+                    <span>Orders</span>
+                </a>
+                <a href="{% url 'manage_payments' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'manage_payments' %}active{% endif %}">
+                    <i class="fas fa-money-bill-wave fa-lg me-3 sidebar-icon"></i>
+                    <span>Payments</span>
+                </a>
+                <a href="{% url 'view_reports' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'view_reports' %}active{% endif %}">
+                    <i class="fas fa-chart-bar fa-lg me-3 sidebar-icon"></i>
+                    <span>Reports</span>
+                </a>
+                <a href="{% url 'dashboard_settings' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'dashboard_settings' %}active{% endif %}">
+                    <i class="fas fa-cog fa-lg me-3 sidebar-icon"></i>
+                    <span>Settings</span>
+                </a>
+
+            {% elif user_role == 'waitress' %}
+                <!-- Waitress Navigation -->
+                <a href="{% url 'waitress_dashboard' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'waitress_dashboard' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt fa-lg me-3 sidebar-icon"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'floor_map' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'floor_map' %}active{% endif %}">
+                    <i class="fas fa-map fa-lg me-3 sidebar-icon"></i>
+                    <span>Floor Map</span>
+                </a>
+                <a href="{% url 'active_orders' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'active_orders' %}active{% endif %}">
+                    <i class="fas fa-clipboard-list fa-lg me-3 sidebar-icon"></i>
+                    <span>Active Orders</span>
+                </a>
+                <a href="{% url 'order_queue' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'order_queue' %}active{% endif %}">
+                    <i class="fas fa-tasks fa-lg me-3 sidebar-icon"></i>
+                    <span>Order Queue</span>
+                </a>
+
+            {% else %}
+                <!-- Customer Navigation -->
+                <a href="{% url 'customer_dashboard' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'customer_dashboard' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt fa-lg me-3 sidebar-icon"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'customer_orders' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'customer_orders' %}active{% endif %}">
+                    <i class="fas fa-shopping-bag fa-lg me-3 sidebar-icon"></i>
+                    <span>My Orders</span>
+                </a>
+                <a href="{% url 'customer_profile' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'customer_profile' %}active{% endif %}">
+                    <i class="fas fa-user fa-lg me-3 sidebar-icon"></i>
+                    <span>My Profile</span>
+                </a>
+                <a href="{% url 'customer_addresses' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'customer_addresses' %}active{% endif %}">
+                    <i class="fas fa-map-marker-alt fa-lg me-3 sidebar-icon"></i>
+                    <span>Addresses</span>
+                </a>
+                <a href="{% url 'cart' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2">
+                    <i class="fas fa-shopping-cart fa-lg me-3 sidebar-icon"></i>
+                    <span>Cart</span>
+                </a>
+            {% endif %}
+        </nav>
+
+        <!-- Logout -->
+        <div class="p-3 border-top">
+            <a href="{% url 'logout' %}" class="sidebar-logout nav-link d-flex align-items-center rounded-3 px-3 py-2">
+                <i class="fas fa-sign-out-alt fa-lg me-3"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+</div>
+</div>

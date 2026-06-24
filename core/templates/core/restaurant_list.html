@@ -1,0 +1,120 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block title %}Menu Catalog - yoni Fast Food Restaurant{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <div class="col-lg-9 col-xl-10">
+            <div class="section">
+    {% if selected_category %}
+    <!-- Category Header -->
+    <div class="mb-4">
+        <a href="{% url 'restaurant_list' %}" class="text-decoration-none">
+            <i class="fas fa-arrow-left me-2"></i>Back to All Categories
+        </a>
+    </div>
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <div style="font-size: 5rem; margin-bottom: 1rem;">{{ selected_category.icon }}</div>
+        <p style="color: var(--primary-purple); font-weight: bold; letter-spacing: 2px; margin-bottom: 0.5rem;">CATEGORY</p>
+        <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">{{ selected_category.name }}</h1>
+        <p style="color: var(--text-light); max-width: 700px; margin: 0 auto;">{{ selected_category.description }}</p>
+    </div>
+    
+    <!-- Menu Items Grid -->
+    <div class="row g-4">
+        {% for item in menu_items %}
+        <div class="col-lg-4 col-md-6">
+            <div class="card border-0 shadow-sm h-100 hover-lift">
+                {% if item.image %}
+                    <img src="{{ item.image.url }}" alt="{{ item.name }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                {% else %}
+                    <div class="card-img-top d-flex align-items-center justify-content-center" style="height: 200px; background: linear-gradient(135deg, #6a1b9a 0%, #2196f3 100%);">
+                        <span style="font-size: 4rem;">{{ item.category.icon|default:'🍽️' }}</span>
+                    </div>
+                {% endif %}
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title fw-bold mb-0">{{ item.name }}</h5>
+                        {% if item.is_popular %}
+                            <span class="badge bg-warning text-dark">Popular</span>
+                        {% elif item.is_new %}
+                            <span class="badge bg-success">New</span>
+                        {% endif %}
+                    </div>
+                    <p class="card-text text-muted small mb-3">{{ item.description|truncatewords:15 }}</p>
+                    
+                    {% if item.rating > 0 %}
+                    <div class="mb-2">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= item.rating %}
+                                <i class="fas fa-star text-warning"></i>
+                            {% else %}
+                                <i class="far fa-star text-warning"></i>
+                            {% endif %}
+                        {% endfor %}
+                        <span class="text-muted small">({{ item.review_count }} reviews)</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="h5 fw-bold mb-0" style="color: #6a1b9a;">Le {{ item.price|floatformat:0|intcomma }}</span>
+                        <a href="{% url 'add_to_cart' item.id %}" class="btn btn-primary rounded-pill px-4">
+                            <i class="fas fa-cart-plus me-2"></i>Add
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-utensils fa-4x text-muted mb-3"></i>
+            <p class="text-muted">No menu items available in this category.</p>
+            <a href="{% url 'restaurant_list' %}" class="btn btn-primary mt-3">Browse All Categories</a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- All Categories View -->
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <p style="color: var(--primary-purple); font-weight: bold; letter-spacing: 2px; margin-bottom: 0.5rem;">MENU CATALOG</p>
+        <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">Satisfy Your Cravings</h1>
+        <p style="color: var(--text-light); max-width: 700px; margin: 0 auto;">Explore our diverse range of freshly prepared meals, from local favorites to international classics.</p>
+    </div>
+    
+    <!-- Quick Categories Grid -->
+    <div class="row g-4 mb-5">
+        {% for category in categories %}
+        <div class="col-lg-2 col-md-4 col-6">
+            <a href="{% url 'restaurant_list' %}?category={{ category.id }}" class="text-decoration-none">
+                <div class="category-card">
+                    <div class="category-icon">{{ category.icon }}</div>
+                    <h6 class="category-name mb-0">{{ category.name }}</h6>
+                    <small class="text-muted">{{ category.menu_items.count }} items</small>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <p class="text-muted">No categories available.</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+.            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+{% endblock %}

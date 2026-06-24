@@ -1,0 +1,391 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block title %}yoni Fast Food Restaurant - Home{% endblock %}
+
+{% block content %}
+<!-- Hero Section - Matching Prototype -->
+<section class="hero-section" style="background: linear-gradient(rgba(106, 27, 154, 0.85), rgba(33, 150, 243, 0.85)), url('https://images.unsplash.com/photo-1504649016770-22de6f9b4486?w=1200') center/cover;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 text-center text-white">
+                <h1 class="display-3 fw-bold mb-4">Savor Every Bite of Authentic Excellence</h1>
+                <p class="lead mb-5">From sizzling local favorites to international classics, we deliver the freshest ingredients straight to your doorstep.</p>
+                
+                <!-- Search Form -->
+                <form action="{% url 'restaurant_list' %}" method="get" class="mx-auto" style="max-width: 600px;">
+                    <div class="input-group input-group-lg shadow-lg rounded-pill overflow-hidden">
+                        <input type="text" name="search" class="form-control border-0 px-4" placeholder="What are you craving today?">
+                        <button class="btn btn-warning px-5 fw-bold" type="submit">
+                            <i class="fas fa-search me-2"></i>Order Now
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Trust Badges -->
+                <div class="row mt-5 g-4">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center justify-content-center gap-3 bg-white bg-opacity-10 rounded-pill p-3">
+                            <i class="fas fa-bolt fa-2x text-warning"></i>
+                            <span class="fw-semibold">30-Min Delivery</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center justify-content-center gap-3 bg-white bg-opacity-10 rounded-pill p-3">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                            <span class="fw-semibold">100% Quality Must</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center justify-content-center gap-3 bg-white bg-opacity-10 rounded-pill p-3">
+                            <i class="fas fa-trophy fa-2x text-warning"></i>
+                            <span class="fw-semibold">Award Winning Service</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Categories Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold">Quick Categories</h2>
+            <a href="{% url 'restaurant_list' %}" class="btn btn-outline-primary rounded-pill">
+                Explore All <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+        </div>
+        
+        <div class="row g-4">
+            {% for category in categories %}
+            <div class="col-lg-2 col-md-4 col-6">
+                <a href="{% url 'restaurant_list' %}?category={{ category.id }}" class="text-decoration-none">
+                    <div class="category-card">
+                        <div class="category-icon">{{ category.icon }}</div>
+                        <h6 class="category-name mb-0">{{ category.name }}</h6>
+                    </div>
+                </a>
+            </div>
+            {% empty %}
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="category-card">
+                    <div class="category-icon">🍔</div>
+                    <h6 class="category-name mb-0">Burgers</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="category-card">
+                    <div class="category-icon">🍕</div>
+                    <h6 class="category-name mb-0">Pizza</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="category-card">
+                    <div class="category-icon">🍛</div>
+                    <h6 class="category-name mb-0">Local Dishes</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="category-card">
+                    <div class="category-icon">🍗</div>
+                    <h6 class="category-name mb-0">Chicken</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="category-card">
+                    <div class="category-icon">🍟</div>
+                    <h6 class="category-name mb-0">Sides</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="category-card">
+                    <div class="category-icon">🥤</div>
+                    <h6 class="category-name mb-0">Beverages</h6>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Weekly Deals Section - Matching Prototype -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">This Week's <span class="text-primary">HOT</span> Deals</h2>
+            <p class="text-muted">Don't miss out on these sizzling offers!</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="deal-card deal-card-purple shadow-lg">
+                    <div class="mb-3">
+                        <span class="badge bg-warning text-dark mb-2">LIMITED TIME</span>
+                        <h3 class="fw-bold">Family Feast</h3>
+                        <p class="mb-3">Feed the whole family with our delicious combo meals</p>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="h4 fw-bold text-warning">Le 120,000</span>
+                            <small class="text-white-50 ms-2"><s>Le 150,000</s></small>
+                        </div>
+                        <a href="{% url 'restaurant_list' %}" class="btn btn-light rounded-pill px-4 fw-bold">
+                            Order Now <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="deal-card deal-card-pink shadow-lg">
+                    <div class="mb-3">
+                        <span class="badge bg-light mb-2">NEW ARRIVAL</span>
+                        <h3 class="fw-bold">Spicy Zinger</h3>
+                        <p class="mb-3">Our new signature burger with extra heat</p>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="h4 fw-bold text-warning">Le 65,000</span>
+                        </div>
+                        <a href="{% url 'restaurant_list' %}" class="btn btn-light rounded-pill px-4 fw-bold">
+                            Order Now <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="deal-card deal-card-green shadow-lg">
+                    <div class="mb-3">
+                        <span class="badge bg-warning text-dark mb-2">SAVE 20%</span>
+                        <h3 class="fw-bold">Lunch Combo</h3>
+                        <p class="mb-3">Any main + side + drink at unbeatable price</p>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="h4 fw-bold text-warning">Le 75,000</span>
+                            <small class="text-white-50 ms-2"><s>Le 95,000</s></small>
+                        </div>
+                        <a href="{% url 'restaurant_list' %}" class="btn btn-light rounded-pill px-4 fw-bold">
+                            Order Now <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Chef's Signature Picks -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Chef's Signature <span class="text-primary">Picks</span></h2>
+            <p class="text-muted">Handpicked favorites crafted by our culinary masters</p>
+        </div>
+        
+        <div class="row g-4">
+            {% for item in popular_items %}
+            <div class="col-lg-4 col-md-6">
+                <div class="menu-card">
+                    <img src="{{ item.get_image_url }}" class="menu-card-img w-100" alt="{{ item.name }}">
+                    
+                    <div class="menu-card-body">
+                        <div class="menu-card-badges">
+                            {% if item.is_popular %}
+                                <span class="badge bg-primary"><i class="fas fa-fire me-1"></i>Popular</span>
+                            {% endif %}
+                            {% if item.is_new %}
+                                <span class="badge bg-success"><i class="fas fa-star me-1"></i>New</span>
+                            {% endif %}
+                        </div>
+                        
+                        <h5 class="menu-card-title">{{ item.name }}</h5>
+                        <p class="menu-card-text">{{ item.description|truncatechars:80 }}</p>
+                        
+                        {% if item.rating > 0 %}
+                        <div class="rating mb-2">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= item.rating %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <span>{{ item.rating }} ({{ item.review_count }} reviews)</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <span class="menu-card-price">Le {{ item.price|floatformat:0|intcomma }}</span>
+                            <a href="{% url 'add_to_cart' item.id %}" class="btn btn-primary rounded-pill px-4">
+                                <i class="fas fa-cart-plus me-2"></i>Add to Cart
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-utensils fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No popular items available</h4>
+                <p class="text-muted">Check back soon for our chef's recommendations!</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mt-5">
+            <a href="{% url 'restaurant_list' %}" class="btn btn-primary btn-lg rounded-pill px-5">
+                View Full Menu <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="py-5" style="background: linear-gradient(135deg, #6a1b9a 0%, #2196f3 100%);">
+    <div class="container">
+        <div class="text-center mb-5 text-white">
+            <h2 class="fw-bold">What Our Customers Say</h2>
+            <p>Real reviews from real food lovers</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="rating">
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                            </div>
+                        </div>
+                        <p class="mb-3">"The Jollof rice is absolutely amazing! Best I've had in Freetown. Fast delivery too!"</p>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-weight: bold;">
+                                AK
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">Aminata Kamara</h6>
+                                <small class="text-muted">Regular Customer</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="rating">
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                            </div>
+                        </div>
+                        <p class="mb-3">"Pepperoni pizza is always fresh and hot. The online ordering system is so convenient!"</p>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-weight: bold;">
+                                MS
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">Mohamed Sesay</h6>
+                                <small class="text-muted">Food Enthusiast</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="rating">
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                            </div>
+                        </div>
+                        <p class="mb-3">"Great variety and reasonable prices. My go-to for lunch every week!"</p>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-weight: bold;">
+                                FB
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">Fatmata Bangura</h6>
+                                <small class="text-muted">Business Professional</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow-sm text-center">
+                    <div class="card-body p-5">
+                        <i class="fas fa-comments fa-3x text-primary mb-3"></i>
+                        <h4 class="fw-bold mb-3">Live Chat Support</h4>
+                        <p class="text-muted mb-4">Our friendly team is here to help you 24/7. Get instant answers to your questions.</p>
+                        <a href="#" class="btn btn-outline-primary rounded-pill px-4">Start Chatting</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow-sm text-center">
+                    <div class="card-body p-5">
+                        <i class="fas fa-utensils fa-3x text-primary mb-3"></i>
+                        <h4 class="fw-bold mb-3">Custom Catering</h4>
+                        <p class="text-muted mb-4">Planning an event? Let us handle the food with our professional catering service.</p>
+                        <a href="#" class="btn btn-outline-primary rounded-pill px-4">Learn More</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow-sm text-center">
+                    <div class="card-body p-5">
+                        <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+                        <h4 class="fw-bold mb-3">Join Our Team</h4>
+                        <p class="text-muted mb-4">Looking for a career? We're always hiring passionate people to join our family.</p>
+                        <a href="#" class="btn btn-outline-primary rounded-pill px-4">View Positions</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add smooth scroll animation
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    });
+</script>
+{% endblock %}

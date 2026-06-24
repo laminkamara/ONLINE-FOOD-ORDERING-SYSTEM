@@ -1,0 +1,147 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Register - yoni Fast Food Restaurant{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <!-- Header -->
+                <div class="card-header bg-primary text-white text-center py-4" style="background: linear-gradient(135deg, #6a1b9a 0%, #2196f3 100%);">
+                    <i class="fas fa-user-plus fa-3x mb-2"></i>
+                    <h3 class="fw-bold mb-0">Join yoni Family!</h3>
+                    <p class="mb-0 mt-2 opacity-75">Create your account and start ordering delicious food</p>
+                </div>
+                
+                <!-- Body -->
+                <div class="card-body p-5">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label fw-semibold">
+                                    <i class="fas fa-user me-2"></i>First Name
+                                </label>
+                                <input type="text" class="form-control form-control-lg rounded-3" id="first_name" name="first_name" placeholder="John" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label fw-semibold">
+                                    <i class="fas fa-user me-2"></i>Last Name
+                                </label>
+                                <input type="text" class="form-control form-control-lg rounded-3" id="last_name" name="last_name" placeholder="Doe" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <label for="username" class="form-label fw-semibold">
+                                <i class="fas fa-at me-2"></i>Username
+                            </label>
+                            <input type="text" class="form-control form-control-lg rounded-3" id="username" name="username" placeholder="johndoe123" required>
+                            <small class="form-text text-muted">This will be your unique identifier</small>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <label for="email" class="form-label fw-semibold">
+                                <i class="fas fa-envelope me-2"></i>Email Address
+                            </label>
+                            <input type="email" class="form-control form-control-lg rounded-3" id="email" name="email" placeholder="john@example.com" required>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <label for="phone" class="form-label fw-semibold">
+                                <i class="fas fa-phone me-2"></i>Phone Number
+                            </label>
+                            <input type="tel" class="form-control form-control-lg rounded-3" id="phone" name="phone" placeholder="+232 76 123456" required>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <label for="address" class="form-label fw-semibold">
+                                <i class="fas fa-map-marker-alt me-2"></i>Delivery Address
+                            </label>
+                            <textarea class="form-control form-control-lg rounded-3" id="address" name="address" rows="2" placeholder="Enter your full delivery address" required></textarea>
+                        </div>
+                        
+                        <div class="row g-3 mt-4">
+                            <div class="col-md-6">
+                                <label for="password1" class="form-label fw-semibold">
+                                    <i class="fas fa-lock me-2"></i>Password
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control form-control-lg rounded-start-3" id="password1" name="password1" placeholder="Create password" required>
+                                    <button class="btn btn-outline-secondary rounded-end-3" type="button" onclick="togglePassword('password1', 'toggleIcon1')">
+                                        <i class="fas fa-eye" id="toggleIcon1"></i>
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">Min. 8 characters</small>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="password2" class="form-label fw-semibold">
+                                    <i class="fas fa-lock me-2"></i>Confirm Password
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control form-control-lg rounded-start-3" id="password2" name="password2" placeholder="Confirm password" required>
+                                    <button class="btn btn-outline-secondary rounded-end-3" type="button" onclick="togglePassword('password2', 'toggleIcon2')">
+                                        <i class="fas fa-eye" id="toggleIcon2"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-check mt-4">
+                            <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                            <label class="form-check-label" for="terms">
+                                I agree to the <a href="#" class="text-primary">Terms of Service</a> and <a href="#" class="text-primary">Privacy Policy</a>
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold shadow-lg mt-4">
+                            <i class="fas fa-user-plus me-2"></i>Create Account
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Footer -->
+                <div class="card-footer bg-light text-center py-4">
+                    <p class="mb-0">Already have an account? 
+                        <a href="{% url 'login' %}" class="fw-bold text-primary text-decoration-none">Login Here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function togglePassword(inputId, iconId) {
+        const passwordInput = document.getElementById(inputId);
+        const toggleIcon = document.getElementById(iconId);
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    }
+    
+    // Password match validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const password1 = document.getElementById('password1').value;
+        const password2 = document.getElementById('password2').value;
+        
+        if (password1 !== password2) {
+            e.preventDefault();
+            alert('Passwords do not match!');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,287 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Live Chat - yoni Fast Food Restaurant{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="fw-bold mb-4" style="color: #6a1b9a;">
+                <i class="fas fa-comments me-2"></i>Live Chat Support
+            </h2>
+        </div>
+    </div>
+
+    <div class="row g-4">
+            <div class="row g-4" style="height: calc(100vh - 200px);">
+                <!-- Chat Partners List -->
+                <div class="col-md-4 col-lg-3">
+                    <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        {% if user_role == 'admin' or user_role == 'waitress' %}
+                            <i class="fas fa-users me-2"></i>Customer Messages
+                        {% else %}
+                            <i class="fas fa-headset me-2"></i>Chat with Staff
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body p-0" style="overflow-y: auto;">
+                    <div class="list-group list-group-flush">
+                        {% for partner in chat_partners %}
+                        <a href="#" class="list-group-item list-group-item-action chat-partner" 
+                           data-user-id="{{ partner.id }}" 
+                           data-user-name="{{ partner.get_full_name|default:partner.username }}">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-secondary bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                    <i class="fas fa-user text-secondary"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0 fw-bold">{{ partner.get_full_name|default:partner.username }}</h6>
+                                    <small class="text-muted">
+                                        {% if partner.is_staff %}Staff{% else %}Customer{% endif %}
+                                    </small>
+                                </div>
+                                <span class="badge bg-danger rounded-pill unread-badge" style="display: none;">0</span>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                            <p class="mb-0">No conversations yet</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Window -->
+        <div class="col-md-8 col-lg-9">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom" id="chat-header" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                            <i class="fas fa-user text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0 fw-bold" id="chat-partner-name">Select a conversation</h5>
+                            <small class="text-muted" id="chat-partner-status">Online</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body" id="chat-messages" style="overflow-y: auto; background: #f8f9fa;">
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-comments fa-4x mb-3"></i>
+                        <h4>Select a conversation to start chatting</h4>
+                        <p>Choose someone from the list on the left</p>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white border-top" id="chat-input-area" style="display: none;">
+                    <form id="chat-form" class="d-flex gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" id="receiver-id" name="receiver_id">
+                           <input type="text" id="message-input" name="message" class="form-control form-control-lg rounded-pill" 
+                               placeholder="Type your message..." autocomplete="off" required>
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4">
+                            <i class="fas fa-paper-plane me-2"></i>Send
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.chat-partner.active {
+    background-color: rgba(106, 27, 154, 0.1);
+    border-left: 4px solid #6a1b9a;
+}
+
+.message-bubble {
+    max-width: 70%;
+    margin-bottom: 1rem;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.message-bubble.mine {
+    margin-left: auto;
+}
+
+.message-bubble.theirs {
+    margin-right: auto;
+}
+
+.message-content {
+    padding: 0.75rem 1.25rem;
+    border-radius: 1.5rem;
+    word-wrap: break-word;
+}
+
+.message-bubble.mine .message-content {
+    background: linear-gradient(135deg, #6a1b9a 0%, #2196f3 100%);
+    color: white;
+    border-bottom-right-radius: 0.5rem;
+}
+
+.message-bubble.theirs .message-content {
+    background: white;
+    color: #333;
+    border-bottom-left-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.message-time {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    color: #999;
+}
+
+.message-bubble.mine .message-time {
+    text-align: right;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.list-group-item-action:hover {
+    background-color: rgba(106, 27, 154, 0.05);
+}
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentChatPartner = null;
+let messagePollingInterval = null;
+
+// Click on chat partner
+document.querySelectorAll('.chat-partner').forEach(item => {
+    item.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Remove active class from all
+        document.querySelectorAll('.chat-partner').forEach(p => p.classList.remove('active'));
+        
+        // Add active to clicked
+        this.classList.add('active');
+        
+        // Get user info
+        const userId = this.dataset.userId;
+        const userName = this.dataset.userName;
+        
+        currentChatPartner = userId;
+        
+        // Update header
+        document.getElementById('chat-header').style.display = 'block';
+        document.getElementById('chat-partner-name').textContent = userName;
+        document.getElementById('chat-input-area').style.display = 'block';
+        document.getElementById('receiver-id').value = userId;
+        
+        // Load messages
+        loadMessages(userId);
+        
+        // Start polling for new messages
+        if (messagePollingInterval) {
+            clearInterval(messagePollingInterval);
+        }
+        messagePollingInterval = setInterval(() => loadMessages(userId), 3000);
+    });
+});
+
+// Load messages
+function loadMessages(userId) {
+    fetch(`/chat/messages/${userId}/`)
+        .then(response => response.json())
+        .then(data => {
+            displayMessages(data.messages);
+        })
+        .catch(error => console.error('Error loading messages:', error));
+}
+
+// Display messages
+function displayMessages(messages) {
+    const chatBox = document.getElementById('chat-messages');
+    chatBox.innerHTML = '';
+    
+    if (messages.length === 0) {
+        chatBox.innerHTML = `
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-comment-dots fa-3x mb-3"></i>
+                <p>Start the conversation!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    messages.forEach(msg => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message-bubble ${msg.is_mine ? 'mine' : 'theirs'}`;
+        messageDiv.innerHTML = `
+            <div class="message-content">${msg.message}</div>
+            <div class="message-time">${msg.timestamp}</div>
+        `;
+        chatBox.appendChild(messageDiv);
+    });
+    
+    // Scroll to bottom
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Send message
+document.getElementById('chat-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const receiverValue = document.getElementById('receiver-id').value;
+    if (!receiverValue) {
+        alert('Please select a chat partner before sending a message.');
+        return;
+    }
+
+    const formData = new FormData(this);
+    
+    fetch('/chat/send/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('message-input').value = '';
+            loadMessages(currentChatPartner);
+        } else {
+            alert(data.message || 'Failed to send message.');
+        }
+    })
+    .catch(error => {
+        console.error('Error sending message:', error);
+        alert('Unable to send message. Please try again.');
+    });
+});
+
+// Auto-refresh unread count
+setInterval(() => {
+    fetch('/chat/unread/')
+        .then(response => response.json())
+        .then(data => {
+            // Update badges (you can enhance this)
+            console.log('Unread messages:', data.unread_count);
+        });
+}, 5000);
+</script>
+{% endblock %}

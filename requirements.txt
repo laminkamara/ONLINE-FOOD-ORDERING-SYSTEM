@@ -1,0 +1,7 @@
+Django==5.2.3
+Pillow==11.0.0
+whitenoise==6.5.0
+gunicorn==20.1.0
+
+# Optional (uncomment if you use .env files):
+# python-dotenv==1.1.0

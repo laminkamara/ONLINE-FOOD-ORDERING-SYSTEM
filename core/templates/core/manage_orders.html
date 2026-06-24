@@ -1,0 +1,238 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block title %}Manage Orders - yoni Fast Food Restaurant{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <!-- Main Content -->
+        <div class="col-lg-9 col-xl-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="fw-bold mb-2">
+                        <i class="fas fa-shopping-bag text-primary me-2"></i>Manage Orders
+                    </h1>
+                    <p class="text-muted mb-0">View and manage all customer orders</p>
+                </div>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-primary rounded-pill">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-shopping-bag fa-2x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ orders.count }}</h3>
+                                    <p class="mb-0 small opacity-75">Total Orders</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-warning text-dark">
+                        <div class="card-body">
+                            <h3 class="fw-bold mb-0">{{ pending_orders }}</h3>
+                            <p class="mb-0 small">Pending</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-info text-white">
+                        <div class="card-body">
+                            <h3 class="fw-bold mb-0">{{ processing_orders }}</h3>
+                            <p class="mb-0 small">Processing</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-success text-white">
+                        <div class="card-body">
+                            <h3 class="fw-bold mb-0">{{ completed_orders }}</h3>
+                            <p class="mb-0 small">Completed</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Table -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0">All Orders</h5>
+                        <div class="input-group" style="max-width: 300px;">
+                            <input type="text" class="form-control rounded-pill" placeholder="Search orders..." id="searchInput">
+                            <span class="input-group-text bg-transparent border-0">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0 py-3">#</th>
+                                    <th class="border-0 py-3">Order #</th>
+                                    <th class="border-0 py-3">Customer</th>
+                                    <th class="border-0 py-3">Table</th>
+                                    <th class="border-0 py-3">Total</th>
+                                    <th class="border-0 py-3">Status</th>
+                                    <th class="border-0 py-3">Date</th>
+                                    <th class="border-0 py-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td class="py-3">{{ forloop.counter }}</td>
+                                    <td class="py-3">
+                                        <span class="fw-semibold">#{{ order.order_number }}</span>
+                                    </td>
+                                    <td class="py-3">{% if order.customer.user %}{{ order.customer.user.get_full_name|default:order.customer.user.username }}{% else %}N/A{% endif %}</td>
+                                    <td class="py-3">{{ order.table.table_number|default:"-" }}</td>
+                                    <td class="py-3 fw-semibold text-primary">Le {{ order.total_amount|floatformat:0|intcomma }}</td>
+                                    <td class="py-3">
+                                        <span class="badge bg-{% if order.status == 'received' %}warning text-dark{% elif order.status == 'preparing' %}info{% elif order.status == 'ready' %}success{% elif order.status == 'on_the_way' %}primary{% elif order.status == 'delivered' %}secondary{% else %}danger{% endif %}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3">{{ order.created_at|date:"M d, H:i" }}</td>
+                                    <td class="py-3 d-flex gap-2 flex-wrap">
+                                        <a href="{% url 'order_tracking' order.order_number %}" class="btn btn-sm btn-outline-primary rounded-pill">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" data-bs-toggle="modal" data-bs-target="#editOrderModal{{ order.id }}">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning rounded-pill" data-bs-toggle="modal" data-bs-target="#updateOrderStatusModal{{ order.id }}">
+                                            <i class="fas fa-sync-alt"></i> Status
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#deleteOrderModal{{ order.id }}">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-5 text-muted">
+                                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                                        <p class="mb-0">No orders found</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for order in orders %}
+<div class="modal fade" id="deleteOrderModal{{ order.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Delete Order #{{ order.order_number }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'order_delete' order.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this order? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger rounded-pill">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editOrderModal{{ order.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Edit Order #{{ order.order_number }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'order_edit' order.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Delivery Address</label>
+                        <textarea name="delivery_address" class="form-control" rows="3" required>{{ order.delivery_address }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Phone</label>
+                        <input type="text" name="phone" class="form-control" value="{{ order.phone }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Notes</label>
+                        <textarea name="notes" class="form-control" rows="3">{{ order.notes }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="updateOrderStatusModal{{ order.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Update Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'order_update_status' order.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Status</label>
+                        <select name="status" class="form-select" required>
+                            <option value="received" {% if order.status == 'received' %}selected{% endif %}>Order Received</option>
+                            <option value="preparing" {% if order.status == 'preparing' %}selected{% endif %}>Preparing</option>
+                            <option value="ready" {% if order.status == 'ready' %}selected{% endif %}>Ready for Pickup</option>
+                            <option value="on_the_way" {% if order.status == 'on_the_way' %}selected{% endif %}>On Its Way</option>
+                            <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                            <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning rounded-pill">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    let filter = this.value.toLowerCase();
+    document.querySelectorAll('tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(filter) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

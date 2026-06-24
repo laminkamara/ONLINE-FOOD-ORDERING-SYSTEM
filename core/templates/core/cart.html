@@ -1,0 +1,117 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block title %}Shopping Cart - yoni Fast Food Restaurant{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+            <div class="text-center mb-5">
+                <h1 class="fw-bold mb-3">
+                    <i class="fas fa-shopping-cart text-primary me-2"></i>Shopping Cart
+                </h1>
+                <p class="text-muted">Review your items before checkout</p>
+            </div>
+
+            {% if cart.items.exists %}
+            <div class="row g-4">
+                <!-- Cart Items -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="border-0 py-3">Item</th>
+                                            <th class="border-0 py-3">Price</th>
+                                            <th class="border-0 py-3">Quantity</th>
+                                            <th class="border-0 py-3">Subtotal</th>
+                                            <th class="border-0 py-3">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in cart.items.all %}
+                                        <tr>
+                                            <td class="py-3">
+                                                <div class="d-flex align-items-center">
+                                                    {% if item.menu_item.image %}
+                                                    <img src="{{ item.menu_item.image.url }}" alt="{{ item.menu_item.name }}" class="rounded-3 me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                                    {% endif %}
+                                                    <div>
+                                                        <strong>{{ item.menu_item.name }}</strong>
+                                                        {% if item.menu_item.is_popular %}
+                                                            <span class="badge bg-warning text-dark ms-2">Popular</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="py-3">Le {{ item.menu_item.price|floatformat:0|intcomma }}</td>
+                                            <td class="py-3">
+                                                <form action="{% url 'update_cart' item.id %}" method="post" class="d-flex align-items-center gap-2">
+                                                    {% csrf_token %}
+                                                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="form-control form-control-sm" style="width: 70px;">
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill">
+                                                        <i class="fas fa-sync"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                            <td class="py-3 fw-semibold text-primary">Le {{ item.get_subtotal|floatformat:0|intcomma }}</td>
+                                            <td class="py-3">
+                                                <a href="{% url 'remove_from_cart' item.id %}" class="btn btn-sm btn-outline-danger rounded-pill">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm bg-light">
+                        <div class="card-body p-4">
+                            <h4 class="fw-bold mb-4">Order Summary</h4>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-muted">Items:</span>
+                                <span class="fw-semibold">{{ cart.items.count }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-muted">Subtotal:</span>
+                                <span class="fw-semibold">Le {{ cart.get_total|floatformat:0|intcomma }}</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-4">
+                                <h5 class="fw-bold mb-0">Total:</h5>
+                                <h5 class="fw-bold text-primary mb-0">Le {{ cart.get_total|floatformat:0|intcomma }}</h5>
+                            </div>
+                            <a href="{% url 'checkout' %}" class="btn btn-primary btn-lg rounded-pill w-100">
+                                <i class="fas fa-credit-card me-2"></i>Proceed to Checkout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <!-- Empty Cart -->
+            <div class="text-center py-5">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body py-5">
+                        <i class="fas fa-shopping-cart fa-5x text-muted mb-4"></i>
+                        <h2 class="fw-bold mb-3">Your Cart is Empty</h2>
+                        <p class="text-muted mb-4">Add some delicious items to get started!</p>
+                        <a href="{% url 'restaurant_list' %}" class="btn btn-primary btn-lg rounded-pill px-5">
+                            <i class="fas fa-utensils me-2"></i>Browse Menu
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block title %}Floor Map - yoni Fast Food Restaurant{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <div class="col-lg-9 col-xl-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="fw-bold mb-2">
+                        <i class="fas fa-map text-primary me-2"></i>Floor Map
+                    </h1>
+                    <p class="text-muted mb-0">View restaurant table layout</p>
+                </div>
+                <a href="{% url 'waitress_dashboard' %}" class="btn btn-outline-primary rounded-pill">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-store fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ branches|length }}</h3>
+                                    <p class="mb-0 small opacity-75">Branches</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-table fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ total_tables }}</h3>
+                                    <p class="mb-0 small opacity-75">Total Tables</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ available_tables }}</h3>
+                                    <p class="mb-0 small opacity-75">Available</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-building text-primary me-2"></i>Restaurant Floor Plan
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        {% for branch in branches %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body text-center">
+                                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                                        <i class="fas fa-store fa-2x text-primary"></i>
+                                    </div>
+                                    <h5 class="fw-bold mb-1">{{ branch.name }}</h5>
+                                    <p class="text-muted small mb-3">{{ branch.address }}</p>
+                                    <hr>
+                                    <div class="d-flex justify-content-around">
+                                        <div>
+                                            <h6 class="fw-bold text-success mb-0">{{ branch.tables.filter|length }}</h6>
+                                            <small class="text-muted">Tables</small>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold text-primary mb-0">{{ branch.tables.all|length }}</h6>
+                                            <small class="text-muted">Total</small>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <div class="d-flex flex-wrap justify-content-center gap-2">
+                                            {% for table in branch.tables.all %}
+                                            <div class="badge bg-{% if table.status == 'available' %}success{% elif table.status == 'occupied' %}danger{% else %}warning text-dark{% endif %} p-2" style="font-size: 0.85em;">
+                                                T{{ table.table_number }}
+                                            </div>
+                                            {% empty %}
+                                            <p class="text-muted small">No tables</p>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12 text-center py-5">
+                            <i class="fas fa-map fa-4x text-muted mb-3"></i>
+                            <p class="text-muted">No branches available</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

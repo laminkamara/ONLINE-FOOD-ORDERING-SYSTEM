@@ -1,0 +1,208 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Track Order {{ order.order_number }} - yoni Fast Food Restaurant{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <div class="col-lg-9 col-xl-10">
+            <div class="tracking-container">
+        <!-- Order Status Header -->
+        <div class="tracking-header">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">👨‍🍳</div>
+            <h1>Chef is preparing your meal!</h1>
+            <p style="color: var(--text-light); margin: 1rem 0;">Your order <strong>#{{ order.order_number }}</strong> is currently being crafted with the freshest ingredients at our kitchen.</p>
+            <span class="status status-{{ order.status }}" style="font-size: 1rem; padding: 0.5rem 1.5rem;">
+                {{ order.get_status_display }}
+            </span>
+            <div class="tracking-timer">
+                {{ order.estimated_time }} <span>mins</span>
+            </div>
+            <p style="color: var(--text-light);">ARRIVING IN</p>
+        </div>
+
+        <!-- Assigned Delivery Panel -->
+        {% if order.courier_name %}
+        <div class="courier-card">
+            <div class="courier-avatar">{{ order.courier_name|first }}</div>
+            <div style="flex: 1;">
+                <h3 style="margin-bottom: 0.25rem;">Assigned Delivery</h3>
+                <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">Our top-rated courier is on the way</p>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <strong>{{ order.courier_name }}</strong>
+                    <span style="color: var(--warning-yellow);">⭐</span>
+                    <span>{{ order.courier_rating }}</span>
+                    <span style="color: var(--text-light); font-size: 0.875rem;">• Verified Courier</span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-outline">📞 Call</button>
+                <button class="btn btn-outline">💬 Chat</button>
+            </div>
+        </div>
+        {% endif %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 3rem;">
+            <!-- Track Progress Timeline -->
+            <div>
+                <h2 style="margin-bottom: 2rem;">📍 Track Progress</h2>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if order.status == 'received' or order.status == 'preparing' or order.status == 'ready' or order.status == 'on_the_way' or order.status == 'delivered' %}completed{% endif %}"></div>
+                        <div>
+                            <h4>Order Received</h4>
+                            <p style="color: var(--text-light); font-size: 0.875rem; margin: 0.5rem 0;">
+                                {{ order.created_at|date:"h:i A" }}
+                            </p>
+                            <p style="color: var(--text-light);">We've received your order and confirmed payment. Sending it to the kitchen now.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if order.status == 'preparing' or order.status == 'ready' or order.status == 'on_the_way' or order.status == 'delivered' %}completed{% endif %}"></div>
+                        <div>
+                            <h4>Preparing Your Meal</h4>
+                            <p style="color: var(--text-light); font-size: 0.875rem; margin: 0.5rem 0;">
+                                {{ order.created_at|date:"h:i A" }}
+                            </p>
+                            <p style="color: var(--text-light);">Our expert chefs are busy preparing your food with fresh ingredients. Quality takes a moment!</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if order.status == 'ready' or order.status == 'on_the_way' or order.status == 'delivered' %}completed{% endif %}"></div>
+                        <div>
+                            <h4>Ready for Pickup</h4>
+                            <p style="color: var(--text-light);">Your meal will be packed in eco-friendly containers to keep it hot and fresh.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if order.status == 'on_the_way' or order.status == 'delivered' %}completed{% endif %}"></div>
+                        <div>
+                            <h4>On Its Way</h4>
+                            <p style="color: var(--text-light);">Our courier will be heading your way as soon as it's ready.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker {% if order.status == 'delivered' %}completed{% endif %}"></div>
+                        <div>
+                            <h4>Delivered</h4>
+                            <p style="color: var(--text-light);">Enjoy your yoni experience! Don't forget to rate your meal.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Details Panel -->
+            <div>
+                <h2 style="margin-bottom: 2rem;">💰 Order Details</h2>
+                <div style="background: var(--bg-light); padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem;">
+                    {% for item in order.items.all %}
+                    <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
+                        <span>{{ item.quantity }}x {{ item.menu_item.name }}</span>
+                        <strong>Le {{ item.price|floatformat:0 }}</strong>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div style="background: var(--bg-light); padding: 1.5rem; border-radius: 10px;">
+                    <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                        <span>Subtotal:</span>
+                        <span>Le {{ order.subtotal|floatformat:0 }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                        <span>Delivery Fee:</span>
+                        <span>Le {{ order.delivery_fee|floatformat:0 }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                        <span>GST (5%):</span>
+                        <span>Le {{ order.gst|floatformat:0 }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 1rem 0 0.5rem 0; margin-top: 1rem; border-top: 2px solid var(--primary-purple);">
+                        <strong style="font-size: 1.3rem;">Total:</strong>
+                        <strong style="font-size: 1.3rem; color: var(--primary-purple);">Le {{ order.total_amount|floatformat:0 }}</strong>
+                    </div>
+                </div>
+
+                <button class="btn btn-outline btn-block" style="margin-top: 1.5rem;">View Receipt →</button>
+            </div>
+        </div>
+
+        <!-- Delivery Address -->
+        {% if order.delivery_address %}
+        <div style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid var(--border);">
+            <h2 style="margin-bottom: 1.5rem;">📍 Delivery Address</h2>
+            <div style="background: var(--bg-light); padding: 1.5rem; border-radius: 10px;">
+                <p style="margin-bottom: 0.5rem;"><strong>{{ order.delivery_address }}</strong></p>
+                {% if order.notes %}
+                <p style="color: var(--text-light); font-size: 0.9rem;">Note: {{ order.notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if order.status == 'delivered' %}
+        <div style="margin-top: 3rem; padding: 2rem; background: var(--bg-light); border-radius: 10px;">
+            <h2 style="margin-bottom: 1rem;">⭐ Rate Your Experience</h2>
+
+            {% if order.customer_rating > 0 %}
+                <p class="text-success mb-3">Thank you for your rating!</p>
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                    <strong style="font-size: 1.5rem;">{{ order.customer_rating }}/5</strong>
+                    <span style="color: var(--warning-yellow);">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= order.customer_rating|floatformat:0 %}
+                                <i class="fas fa-star"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </span>
+                </div>
+                {% if order.customer_feedback %}
+                <div style="background: white; padding: 1rem; border-radius: 10px;">
+                    <h5 class="mb-2">Your feedback</h5>
+                    <p class="mb-0" style="color: #333;">{{ order.customer_feedback }}</p>
+                </div>
+                {% endif %}
+            {% else %}
+                <form method="post" action="{% url 'order_tracking' order.order_number %}">
+                    {% csrf_token %}
+                    <div style="margin-bottom: 1.5rem;">
+                        <label class="form-label fw-semibold">Your rating</label>
+                        <div class="d-flex gap-2 align-items-center">
+                            {% for value in "54321" %}
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="rating" id="rating{{ value }}" value="{{ value }}">
+                                <label class="form-check-label" for="rating{{ value }}">{{ value }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Comments</label>
+                        <textarea class="form-control" name="feedback" rows="3" placeholder="Tell us how we did..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Submit Rating</button>
+                </form>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Need Help Section -->
+        <div style="margin-top: 3rem; padding: 2rem; background: var(--bg-light); border-radius: 10px; text-align: center;">
+            <h3 style="margin-bottom: 1rem;">ℹ️ NEED HELP?</h3>
+            <p style="color: var(--text-light); margin-bottom: 1rem;">If you have issues with your order or need to change anything, contact our support line directly.</p>
+            <a href="#" style="color: var(--primary-purple); font-weight: bold;">Contact Support Center</a>
+        </div>
+
+        <div style="margin-top: 2rem; text-align: center;">
+            <a href="{% url 'order_history' %}" class="btn btn-secondary">← Back to Orders</a>
+        </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

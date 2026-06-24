@@ -1,0 +1,91 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block title %}My Orders - yoni Fast Food Restaurant{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="container-fluid py-4">
+        <div class="row g-4">
+                <div class="col-lg-9 col-xl-10">
+                <div class="container py-5">
+                    <!-- Header -->
+                    <div class="text-center mb-5">
+                        <h1 class="fw-bold mb-3">
+                            <i class="fas fa-shopping-bag text-primary me-2"></i>My Orders
+                        </h1>
+                        <p class="text-muted">Track and view your order history</p>
+                    </div>
+                
+                    {% if orders %}
+                    <div class="row g-4">
+                        {% for order in orders %}
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <h4 class="fw-bold mb-0 me-3">Order #{{ order.order_number }}</h4>
+                                                <span class="badge bg-{% if order.status == 'pending' %}warning text-dark{% elif order.status == 'preparing' %}info{% elif order.status == 'ready' %}success{% elif order.status == 'delivered' %}secondary{% else %}danger{% endif %}">
+                                                    {{ order.get_status_display }}
+                                                </span>
+                                            </div>
+                                            <div class="row g-3">
+                                                <div class="col-sm-6">
+                                                    <p class="text-muted small mb-1">Restaurant</p>
+                                                    <p class="fw-semibold mb-0">{{ order.restaurant.name }}</p>
+                                                    {% if order.branch %}
+                                                    <p class="text-muted small mb-0">{{ order.branch.name }}</p>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <p class="text-muted small mb-1">Items</p>
+                                                    <p class="fw-semibold mb-0">{{ order.items.count }} items</p>
+                                                    <p class="text-muted small mb-0">{{ order.created_at|date:"M d, Y H:i" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                                            <h3 class="fw-bold text-primary mb-3">Le {{ order.total_amount|floatformat:0|intcomma }}</h3>
+                                            {% if order.estimated_time %}
+                                            <p class="text-muted small mb-3">
+                                                <i class="fas fa-clock me-1"></i>Est: {{ order.estimated_time }} mins
+                                            </p>
+                                            {% endif %}
+                                            <div class="d-flex gap-2 justify-content-md-end">
+                                                <a href="{% url 'order_tracking' order.order_number %}" class="btn btn-primary rounded-pill">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>Track
+                                                </a>
+                                                <a href="{% url 'order_detail' order.id %}" class="btn btn-outline-primary rounded-pill">
+                                                    <i class="fas fa-eye me-1"></i>Details
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <!-- Empty State -->
+                    <div class="text-center py-5">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body py-5">
+                                <i class="fas fa-shopping-bag fa-5x text-muted mb-4"></i>
+                                <h2 class="fw-bold mb-3">No Orders Yet</h2>
+                                <p class="text-muted mb-4">You haven't placed any orders yet. Start exploring our delicious menu!</p>
+                                <a href="{% url 'restaurant_list' %}" class="btn btn-primary btn-lg rounded-pill px-5">
+                                    <i class="fas fa-utensils me-2"></i>Browse Menu
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

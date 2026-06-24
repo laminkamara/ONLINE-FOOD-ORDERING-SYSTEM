@@ -1,0 +1,115 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Order #{{ order.order_number }} - yoni Fast Food Restaurant{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <div class="col-lg-9 col-xl-10">
+            <div class="order-detail" style="max-width: 900px; margin: 0 auto;">
+                <h1 class="section-title" style="text-align: center; margin-bottom: 3rem;">Order #{{ order.order_number }}</h1>
+        <div class="order-info" style="background: var(--bg-light); padding: 2rem; border-radius: 10px; margin-bottom: 2rem;">
+            <h3 style="margin-bottom: 1.5rem;">Order Information</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <p><strong>Status:</strong> <span class="status status-{{ order.status }}">{{ order.get_status_display }}</span></p>
+                    <p><strong>Restaurant:</strong> {{ order.restaurant.name }}</p>
+                    {% if order.branch %}
+                    <p><strong>Branch:</strong> {{ order.branch.name }}</p>
+                    {% endif %}
+                    <p><strong>Order Date:</strong> {{ order.created_at|date:"M d, Y H:i" }}</p>
+                </div>
+                <div>
+                    <p><strong>Delivery Address:</strong><br>{{ order.delivery_address }}</p>
+                    <p><strong>Phone:</strong> {{ order.phone }}</p>
+                    {% if order.table %}
+                    <p><strong>Table:</strong> {{ order.table.table_number }} ({{ order.table.branch.name }})</p>
+                    {% endif %}
+                    {% if placed_by_waitress %}
+                    <p><strong>Order Source:</strong> Assigned by Waitress</p>
+                    {% endif %}
+                    {% if order.estimated_time %}
+                    <p><strong>Estimated Time:</strong> {{ order.estimated_time }} minutes</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% if order.notes %}
+            <div style="margin-top: 1rem; padding: 1rem; background: white; border-radius: 8px;">
+                <strong>Special Instructions:</strong><br>{{ order.notes }}
+            </div>
+            {% endif %}
+
+            {% if order.payments.exists %}
+            <div style="margin-top: 1rem; padding: 1rem; background: white; border-radius: 8px;">
+                <h4>Payment Information</h4>
+                {% with payment=order.payments.first %}
+                    <p><strong>Method:</strong> {{ payment.get_payment_method_display }}</p>
+                    <p><strong>Status:</strong> {{ payment.get_status_display }}</p>
+                    {% if payment.transaction_id %}
+                    <p><strong>Transaction Code:</strong> {{ payment.transaction_id }}</p>
+                    {% endif %}
+                    {% if payment.receipt_image %}
+                    <p><strong>Proof of Payment:</strong></p>
+                    <img src="{{ payment.receipt_image.url }}" alt="Payment receipt" style="max-width: 100%; border-radius: 10px; margin-top: 0.75rem;" />
+                    {% endif %}
+                {% endwith %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="order-items">
+            <h3 style="margin-bottom: 1.5rem;">Items Ordered</h3>
+            <table class="order-table" style="width: 100%; background: white; border-radius: 10px; overflow: hidden;">
+                <thead style="background: var(--primary-purple); color: white;">
+                    <tr>
+                        <th style="padding: 1rem; text-align: left;">Item</th>
+                        <th style="padding: 1rem; text-align: left;">Price</th>
+                        <th style="padding: 1rem; text-align: center;">Quantity</th>
+                        <th style="padding: 1rem; text-align: right;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items.all %}
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 1rem;">{{ item.menu_item.name }}</td>
+                        <td style="padding: 1rem;">Le {{ item.price|floatformat:0 }}</td>
+                        <td style="padding: 1rem; text-align: center;">{{ item.quantity }}</td>
+                        <td style="padding: 1rem; text-align: right;"><strong>Le {{ item.get_subtotal|floatformat:0 }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div style="background: white; padding: 1.5rem; border-radius: 10px; margin-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                    <span>Subtotal:</span>
+                    <span>Le {{ order.subtotal|floatformat:0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                    <span>Delivery Fee:</span>
+                    <span>Le {{ order.delivery_fee|floatformat:0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                    <span>GST (5%):</span>
+                    <span>Le {{ order.gst|floatformat:0 }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 1rem 0 0.5rem 0; margin-top: 1rem; border-top: 3px solid var(--primary-purple);">
+                    <strong style="font-size: 1.5rem;">Total:</strong>
+                    <strong style="font-size: 1.5rem; color: var(--primary-purple);">Le {{ order.total_amount|floatformat:0 }}</strong>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center;">
+            {% if user_role == 'customer' %}
+                <a href="{% url 'order_tracking' order.order_number %}" class="btn btn-primary btn-large">Track Order</a>
+                <a href="{% url 'order_history' %}" class="btn btn-outline">← Back to Orders</a>
+            {% else %}
+                <a href="{% url 'order_queue' %}" class="btn btn-outline">← Back to Order Queue</a>
+            {% endif %}
+        </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

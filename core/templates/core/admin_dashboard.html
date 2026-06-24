@@ -1,0 +1,330 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block title %}Admin Dashboard - yoni Fast Food Restaurant{% endblock %}
+
+{% block extra_css %}
+<style>
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <!-- Main Content -->
+        <div class="col-lg-9 col-xl-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="fw-bold mb-2">
+                        <i class="fas fa-chart-line text-primary me-2"></i>Admin Dashboard
+                    </h1>
+                    <p class="text-muted mb-0">Manage users, menu, and system settings</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addBranchModal">
+                        <i class="fas fa-plus me-2"></i>Add Branch
+                    </button>
+                    <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addTableModal">
+                        <i class="fas fa-plus me-2"></i>Add Table
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-building fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ branches|length }}</h3>
+                                    <p class="mb-0 small opacity-75">Branches</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-table fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ all_tables|length }}</h3>
+                                    <p class="mb-0 small opacity-75">Total Tables</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-users fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ total_users }}</h3>
+                                    <p class="mb-0 small opacity-75">Total Users</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-warning text-dark">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-shopping-bag fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ total_orders }}</h3>
+                                    <p class="mb-0 small opacity-75">Total Orders</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Branches & Tables Section -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0">
+                            <i class="fas fa-building text-primary me-2"></i>Our Branches
+                        </h5>
+                        <span class="badge bg-primary rounded-pill">{{ branches|length }} Total</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% for branch in branches %}
+                        <div class="col-md-6 col-lg-4">
+                            <a href="?branch={{ branch.id }}" class="text-decoration-none">
+                                <div class="card border h-100 hover-lift {% if selected_branch and selected_branch.id == branch.id %}border-primary shadow{% else %}border-light{% endif %}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="fw-bold mb-0 {% if selected_branch and selected_branch.id == branch.id %}text-primary{% endif %}">
+                                                {{ branch.name }}
+                                            </h6>
+                                            <span class="badge {% if selected_branch and selected_branch.id == branch.id %}bg-primary{% else %}bg-secondary{% endif %} rounded-pill">
+                                                {{ branch.tables.count }} tables
+                                            </span>
+                                        </div>
+                                        <p class="small text-muted mb-2">
+                                            <i class="fas fa-map-marker-alt me-1"></i>{{ branch.address }}
+                                        </p>
+                                        <p class="small text-muted mb-0">
+                                            <i class="fas fa-clock me-1"></i>{{ branch.opening_hours }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        {% empty %}
+                        <div class="col-12 text-center py-5">
+                            <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No branches found. Create your first branch!</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Management -->
+            {% if selected_branch %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0">
+                            <i class="fas fa-table text-primary me-2"></i>Tables at {{ selected_branch.name }}
+                        </h5>
+                        <div class="input-group" style="max-width: 300px;">
+                            <input type="text" class="form-control rounded-pill" placeholder="Search tables..." id="searchTables">
+                            <span class="input-group-text bg-transparent border-0">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% for table in tables %}
+                        <div class="col-md-6 col-lg-4 table-row">
+                            <div class="card border h-100 {% if table.status == 'available' %}border-success{% elif table.status == 'occupied' %}border-danger{% else %}border-warning{% endif %}">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2 {% if table.status == 'available' %}bg-success bg-opacity-10{% elif table.status == 'occupied' %}bg-danger bg-opacity-10{% else %}bg-warning bg-opacity-10{% endif %}" style="width: 70px; height: 70px;">
+                                            {% if table.status == 'available' %}
+                                                <i class="fas fa-check fa-2x text-success"></i>
+                                            {% elif table.status == 'occupied' %}
+                                                <i class="fas fa-users fa-2x text-danger"></i>
+                                            {% else %}
+                                                <i class="fas fa-clock fa-2x text-warning"></i>
+                                            {% endif %}
+                                        </div>
+                                        <h5 class="fw-bold mb-1">Table {{ table.table_number }}</h5>
+                                        <p class="text-muted small mb-0">
+                                            <i class="fas fa-chair me-1"></i>{{ table.capacity }} Seats
+                                        </p>
+                                    </div>
+                                    <span class="badge {% if table.status == 'available' %}bg-success{% elif table.status == 'occupied' %}bg-danger{% else %}bg-warning text-dark{% endif %} px-3 py-2 rounded-pill">
+                                        {{ table.get_status_display }}
+                                    </span>
+                                    {% if table.status == 'occupied' and table.current_bill %}
+                                    <div class="mt-3 pt-3 border-top">
+                                        <p class="small text-muted mb-0">
+                                            <i class="fas fa-receipt me-1"></i>Bill: <span class="fw-bold">Le {{ table.current_bill|floatformat:0|intcomma }}</span>
+                                        </p>
+                                    </div>
+                                    {% endif %}
+                                    {% if table.status == 'reserved' and table.reservation_time %}
+                                    <div class="mt-3 pt-3 border-top">
+                                        <p class="small text-muted mb-0">
+                                            <i class="fas fa-calendar me-1"></i>@ {{ table.reservation_time|date:"H:i" }}
+                                        </p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12 text-center py-5">
+                            <i class="fas fa-table fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No tables found for this branch.</p>
+                            <button class="btn btn-primary mt-2 rounded-pill" data-bs-toggle="modal" data-bs-target="#addTableModal">
+                                <i class="fas fa-plus me-2"></i>Add First Table
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 120px; height: 120px;">
+                        <i class="fas fa-hand-pointer fa-3x text-muted"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Select a Branch</h4>
+                    <p class="text-muted mb-0">Choose a branch from the list above to view and manage its tables</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Branch Modal -->
+<div class="modal fade" id="addBranchModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h4 class="modal-title fw-bold">
+                    <i class="fas fa-building text-primary me-2"></i>Add New Branch
+                </h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'branch_create' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Branch Name</label>
+                        <input type="text" name="name" class="form-control form-control-lg" placeholder="e.g., Downtown Branch" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Address</label>
+                        <textarea name="address" class="form-control" rows="3" placeholder="Full address" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Phone</label>
+                        <input type="tel" name="phone" class="form-control" placeholder="+232 XX XXX XXXX" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Opening Hours</label>
+                        <input type="text" name="opening_hours" class="form-control" placeholder="e.g., 08:00 AM - 11:00 PM" required>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">
+                            <i class="fas fa-plus me-2"></i>Create Branch
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Table Modal -->
+<div class="modal fade" id="addTableModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h4 class="modal-title fw-bold">
+                    <i class="fas fa-table text-primary me-2"></i>Add New Table
+                </h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if selected_branch %}
+                <form method="post" action="{% url 'table_create' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="branch" value="{{ selected_branch.id }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Table Number</label>
+                        <input type="text" name="table_number" class="form-control form-control-lg" placeholder="e.g., T-01" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Capacity (Seats)</label>
+                        <input type="number" name="capacity" class="form-control" min="1" max="20" placeholder="Number of seats" required>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">
+                            <i class="fas fa-plus me-2"></i>Create Table
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Select a Branch First</h5>
+                    <p class="text-muted mb-0">Please select a branch before adding a table.</p>
+                </div>
+                <div class="d-grid">
+                    <button type="button" class="btn btn-primary rounded-pill" data-bs-dismiss="modal">OK</button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Search tables
+document.getElementById('searchTables')?.addEventListener('keyup', function() {
+    let filter = this.value.toLowerCase();
+    document.querySelectorAll('.table-row').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(filter) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

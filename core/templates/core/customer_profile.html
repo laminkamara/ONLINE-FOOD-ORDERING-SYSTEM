@@ -1,0 +1,133 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block title %}My Profile - yoni Fast Food Restaurant{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <div class="col-lg-9 col-xl-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="fw-bold mb-2">
+                        <i class="fas fa-user text-primary me-2"></i>My Profile
+                    </h1>
+                    <p class="text-muted mb-0">View and edit your profile information</p>
+                </div>
+                <a href="{% url 'customer_dashboard' %}" class="btn btn-outline-primary rounded-pill">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-shopping-bag fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ total_orders }}</h3>
+                                    <p class="mb-0 small opacity-75">Total Orders</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-money-bill-wave fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">Le {{ total_spent|floatformat:0|intcomma }}</h3>
+                                    <p class="mb-0 small opacity-75">Total Spent</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calendar fa-3x me-3 opacity-50"></i>
+                                <div>
+                                    <h3 class="fw-bold mb-0">{{ user.date_joined|date:"M Y" }}</h3>
+                                    <p class="mb-0 small opacity-75">Member Since</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-user-edit text-primary me-2"></i>Profile Information
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 120px; height: 120px;">
+                            <i class="fas fa-user fa-4x text-primary"></i>
+                        </div>
+                        <h3 class="fw-bold">{{ user.get_full_name|default:user.username }}</h3>
+                        <p class="text-muted mb-0">{{ user.email }}</p>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-user me-2 text-primary"></i>Username
+                                </label>
+                                <input type="text" class="form-control form-control-lg" value="{{ user.username }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-envelope me-2 text-primary"></i>Email
+                                </label>
+                                <input type="email" class="form-control form-control-lg" value="{{ user.email }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-id-card me-2 text-primary"></i>First Name
+                                </label>
+                                <input type="text" class="form-control form-control-lg" name="first_name" value="{{ user.first_name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-id-card me-2 text-primary"></i>Last Name
+                                </label>
+                                <input type="text" class="form-control form-control-lg" name="last_name" value="{{ user.last_name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-phone me-2 text-primary"></i>Phone Number
+                                </label>
+                                <input type="tel" class="form-control form-control-lg" name="phone" value="{{ customer.phone }}" placeholder="+232 XX XXX XXX">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-calendar me-2 text-primary"></i>Member Since
+                                </label>
+                                <input type="text" class="form-control form-control-lg" value="{{ user.date_joined|date:'M d, Y' }}" readonly>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5">
+                                <i class="fas fa-save me-2"></i>Update Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
