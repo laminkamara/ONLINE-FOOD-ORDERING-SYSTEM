@@ -1,0 +1,1220 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Live Order Tracking - {{ order.order_number }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<style>
+    #map {
+        height: 100vh;
+        width: 100%;
+        z-index: 1;
+    }
+
+    .map-overlay {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 999;
+        background: rgba(255,255,255,0.95);
+        border-radius: 8px;
+        padding: 1.25rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        min-width: 280px;
+        font-size: 0.95rem;
+    }
+
+    .map-overlay h6 {
+        margin: 0 0 1rem 0;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .overlay-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .overlay-label {
+        color: #666;
+        font-weight: 500;
+        min-width: 100px;
+    }
+    
+    .overlay-value {
+        font-weight: 700;
+        color: #667eea;
+        text-align: right;
+    }
+
+    .transport-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin: 1rem 0;
+    }
+
+    .transport-btn {
+        flex: 1;
+        border: 1px solid #ddd;
+        background: #f8f9fa;
+        color: #333;
+        border-radius: 4px;
+        padding: 0.5rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .transport-btn.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+
+    .transport-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .refresh-btn {
+        width: 100%;
+        border: none;
+        background: #27ae60;
+        color: white;
+        border-radius: 4px;
+        padding: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 0.5rem;
+        transition: background 0.2s ease;
+    }
+
+    .refresh-btn:hover {
+        background: #229954;
+    }
+
+    .legend-box {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        z-index: 999;
+        font-size: 0.9rem;
+    }
+
+    .legend-title {
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .profile-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .profile-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid #667eea;
+        background: #eef2ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: #667eea;
+    }
+
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .profile-info {
+        flex: 1;
+    }
+
+    .route-steps {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: #f8f9ff;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        max-height: 180px;
+        overflow-y: auto;
+    }
+
+    .route-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .route-step:last-child {
+        margin-bottom: 0;
+    }
+
+    .route-step-number {
+        min-width: 24px;
+        height: 24px;
+        line-height: 24px;
+        border-radius: 50%;
+        background: #667eea;
+        color: white;
+        text-align: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .geofence-status {
+        margin-top: 0.75rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .geofence-status.green {
+        color: #1d7a36;
+    }
+
+    .geofence-status.orange {
+        color: #c05621;
+    }
+
+    .geofence-status.red {
+        color: #c53030;
+    }
+
+    .source-label {
+        color: #444;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+
+    .source-value {
+        color: #667eea;
+        font-weight: 700;
+    }
+
+    .contact-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.75rem;
+    }
+
+    .contact-buttons a, .contact-buttons button {
+        flex: 1;
+        min-width: 110px;
+        border: 1px solid #ddd;
+        background: #f8f9fa;
+        color: #333;
+        border-radius: 4px;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.85rem;
+        text-align: center;
+        text-decoration: none;
+    }
+
+    .contact-buttons a:hover, .contact-buttons button:hover {
+        background: #eef2ff;
+        border-color: #667eea;
+        color: #1c3d72;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 0.5rem;
+    }
+
+    .status-badge.online {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #6ee7b7;
+    }
+
+    .status-badge.on_delivery {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fcd34d;
+    }
+
+    .status-badge.offline {
+        background: #fee2e2;
+        color: #7f1d1d;
+        border: 1px solid #fca5a5;
+    }
+
+    .geofence-status.orange {
+        color: #c05621;
+    }
+
+    .geofence-status.red {
+        color: #c53030;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .legend-marker {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.8rem;
+        border: 2px solid white;
+    }
+
+    .legend-delivery {
+        background: #e74c3c;
+    }
+
+    .legend-customer {
+        background: #3498db;
+    }
+
+    .auto-refresh-toggle {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eee;
+    }
+
+    .auto-refresh-toggle label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .auto-refresh-toggle input {
+        margin-right: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .map-overlay {
+            min-width: 240px;
+            right: 10px;
+            top: 10px;
+            padding: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .legend-box {
+            bottom: 10px;
+            left: 10px;
+            padding: 0.75rem;
+            font-size: 0.85rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="map"></div>
+
+<!-- Map Control Panel -->
+<div class="map-overlay">
+    <h6>📍 Live Tracking</h6>
+    {% if delivery_profile %}
+    <div class="profile-row">
+        <div class="profile-avatar">
+            {% if delivery_profile.profile_photo %}
+                <img src="{{ delivery_profile.profile_photo.url }}" alt="Driver photo">
+            {% else %}
+                🚗
+            {% endif %}
+        </div>
+        <div class="profile-info">
+            <div style="font-weight:700;">{{ order.delivery_person.get_full_name|default:order.delivery_person.username }}</div>
+            <div style="font-size:0.82rem; color:#555;">{{ delivery_profile.get_status_display }}</div>
+            <div style="font-size:0.82rem; color:#555;">{{ delivery_profile.phone|default:'No phone set' }}</div>
+        </div>
+    </div>
+    {% endif %}
+    <div class="overlay-line">
+        <span class="overlay-label">Live Watch</span>
+        <span class="overlay-value" id="overlayWatchStatus">Initializing...</span>
+    </div>
+    <div class="overlay-line">
+        <span class="overlay-label">Accuracy</span>
+        <span class="overlay-value" id="overlayAccuracy">-- m</span>
+    </div>
+    <div class="overlay-line">
+        <span class="overlay-label">Coordinates</span>
+        <span class="overlay-value" id="overlayCoordinates">--, --</span>
+    </div>
+    <div class="overlay-line">
+        <span class="overlay-label">Delivery Status</span>
+        <span class="overlay-value" id="overlayDeliveryStatus">--</span>
+    </div>
+    <div class="overlay-line">
+        <span class="overlay-label">Location Source</span>
+        <span class="overlay-value" id="overlaySource">Browser GPS</span>
+    </div>
+    <div class="overlay-line">
+        <span class="overlay-label">GPS Quality</span>
+        <span class="overlay-value" id="overlayQuality">--</span>
+    </div>
+    <div class="overlay-line">
+        <span class="overlay-label">Last Update</span>
+        <span class="overlay-value" id="overlayLastUpdate">--</span>
+    </div>
+    <button type="button" class="refresh-btn" id="retryGpsBtn">📡 Retry GPS</button>
+    <div class="contact-buttons">
+        {% if order.delivery_person and order.customer %}
+        <a href="{% url 'live_chat' %}?partner_id={{ order.customer.user.id }}">💬 Chat</a>
+        {% endif %}
+        <a href="{% url 'order_history' %}">📜 Delivery History</a>
+        {% if is_delivery %}
+        <button type="button" class="transport-btn" id="proofUploadBtn" style="min-width: auto;">📷 Proof</button>
+        {% endif %}
+    </div>
+    {% if is_delivery %}
+    <input type="file" id="proofUploadInput" accept="image/*" style="display:none;">
+    <div id="proofPreview" style="display:none; margin-top:0.75rem; border-radius:8px; overflow:hidden;">
+        <img id="proofPreviewImage" src="#" alt="Delivery proof preview" style="width:100%; display:block;">
+    </div>
+    <button type="button" class="refresh-btn" id="markDeliveredBtn">✅ Mark Delivered</button>
+    <button type="button" class="refresh-btn" id="toggleStatusBtn">🟢 Go Offline</button>
+    {% endif %}
+    <div class="status-badge offline" id="statusBadge">● Offline</div>
+    <div class="overlay-line">
+        <span class="overlay-label">Distance</span>
+        <span class="overlay-value" id="overlayDistance">-- km</span>
+    </div>
+    <div class="overlay-line">
+        <span class="overlay-label">ETA</span>
+        <span class="overlay-value" id="overlayEta">-- min</span>
+    </div>
+    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee;">
+        <div style="font-size: 0.85rem; color: #666; margin-bottom: 0.5rem; font-weight: 600;">Travel Mode</div>
+        <div class="transport-buttons">
+            <button type="button" class="transport-btn active" data-mode="driving">🚗 Car</button>
+            <button type="button" class="transport-btn" data-mode="cycling">🚲 Bike</button>
+            <button type="button" class="transport-btn" data-mode="foot">🚶 Walk</button>
+        </div>
+    </div>
+    <div class="route-steps" id="routeInstructions">
+        <div style="font-weight:700; margin-bottom:0.75rem;">Driver directions</div>
+        <div id="routeStepsList">Waiting for route...</div>
+    </div>
+    <div class="geofence-status" id="geofenceNotice">Arrival status: waiting for GPS</div>
+    <button type="button" class="refresh-btn" id="refreshMapBtn">🔄 Refresh Now</button>
+    <div class="auto-refresh-toggle">
+        <label>
+            <input type="checkbox" id="autoRefresh" checked>
+            Auto-refresh (5s)
+        </label>
+    </div>
+</div>
+
+<!-- Map Legend -->
+<div class="legend-box">
+    <div class="legend-title">Map Legend</div>
+    <div class="legend-item">
+        <div class="legend-marker legend-delivery">🚗</div>
+        <span>Delivery Person</span>
+    </div>
+    <div class="legend-item">
+        <div class="legend-marker legend-customer">📍</div>
+        <span>Customer Location</span>
+    </div>
+    <div class="legend-item">
+        <span style="color: #999; font-size: 0.85rem;">Free OpenStreetMap</span>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const ORDER_ID = {{ order.id }};
+const ORDER_NUMBER = "{{ order.order_number }}";
+const USER_ROLE = "{{ user_role }}";
+const IS_CUSTOMER = {{ is_customer|lower }};
+const IS_DELIVERY = {{ is_delivery|lower }};
+const INITIAL_DELIVERY_STATUS = "{{ delivery_profile.status|default:'offline' }}";
+
+let map;
+let deliveryMarker = null;
+let customerMarker = null;
+let routePolyline = null;
+let currentTravelMode = 'driving';
+let autoRefreshInterval = null;
+let deliveryWatchId = null;
+let customerWatchId = null;
+let hasCenteredOnCurrentLocation = false;
+let watchStatusElement = null;
+let accuracyElement = null;
+let coordinatesElement = null;
+let routeStepsElement = null;
+let geofenceNoticeElement = null;
+let sourceElement = null;
+let statusBadgeElement = null;
+let proofUploadInput = null;
+let proofPreview = null;
+let proofPreviewImage = null;
+let markDeliveredBtn = null;
+let toggleStatusBtn = null;
+let lastUpdateElement = null;
+let CSRF_TOKEN = null;
+const GEOFENCE_RADIUS_METERS = 80;
+let lastNotifiedDistance = null;
+
+// Custom icons using divIcon
+function createDeliveryIcon() {
+    return L.divIcon({
+        html: `<div style="
+            width: 40px;
+            height: 40px;
+            background: #e74c3c;
+            border: 3px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        ">🚗</div>`,
+        iconSize: [40, 40],
+        className: 'custom-marker'
+    });
+}
+
+function createCustomerIcon() {
+    return L.divIcon({
+        html: `<div style="
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            border: 3px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        ">📍</div>`,
+        iconSize: [40, 40],
+        className: 'custom-marker'
+    });
+}
+
+function initMap() {
+    CSRF_TOKEN = getCookie('csrftoken');
+    
+    // Initialize Leaflet map with default center (Freetown, Sierra Leone)
+    map = L.map('map').setView([8.4606, -13.2317], 14);
+    
+    // Add OpenStreetMap tiles (completely free!)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+        minZoom: 3
+    }).addTo(map);
+    
+    watchStatusElement = document.getElementById('overlayWatchStatus');
+    accuracyElement = document.getElementById('overlayAccuracy');
+    coordinatesElement = document.getElementById('overlayCoordinates');
+    lastUpdateElement = document.getElementById('overlayLastUpdate');
+    sourceElement = document.getElementById('overlaySource');
+    statusBadgeElement = document.getElementById('statusBadge');
+    proofUploadInput = document.getElementById('proofUploadInput');
+    proofPreview = document.getElementById('proofPreview');
+    proofPreviewImage = document.getElementById('proofPreviewImage');
+    markDeliveredBtn = document.getElementById('markDeliveredBtn');
+    toggleStatusBtn = document.getElementById('toggleStatusBtn');
+    routeStepsElement = document.getElementById('routeStepsList');
+    geofenceNoticeElement = document.getElementById('geofenceNotice');
+    setupEventListeners();
+    updateDeliveryStatusBadge(INITIAL_DELIVERY_STATUS);
+    requestNotificationPermission();
+    startGeolocationWatch();
+    startAutoRefresh();
+}
+
+function setupEventListeners() {
+    document.getElementById('refreshMapBtn').addEventListener('click', manualRefresh);
+    document.getElementById('retryGpsBtn').addEventListener('click', retryGeolocation);
+    if (proofUploadInput) {
+        document.getElementById('proofUploadBtn').addEventListener('click', () => proofUploadInput.click());
+        proofUploadInput.addEventListener('change', handleProofFileSelect);
+    }
+    if (markDeliveredBtn) {
+        markDeliveredBtn.addEventListener('click', markOrderDelivered);
+    }
+    if (toggleStatusBtn) {
+        toggleStatusBtn.addEventListener('click', toggleDeliveryStatus);
+    }
+    
+    document.getElementById('autoRefresh').addEventListener('change', function() {
+        if (this.checked) {
+            startAutoRefresh();
+        } else {
+            stopAutoRefresh();
+        }
+    });
+    
+    document.querySelectorAll('.transport-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.transport-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            switchMode(this.getAttribute('data-mode'));
+        });
+    });
+}
+
+function updateDeliveryLocation() {
+    if (IS_DELIVERY && deliveryWatchId !== null) {
+        // Live GPS watch is already updating the delivery marker directly,
+        // so avoid overwriting it with stale backend coordinates.
+        return;
+    }
+
+    fetch(`/api/delivery/location/${ORDER_ID}/`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.delivery && data.delivery.latitude != null && data.delivery.longitude != null) {
+                const lat = parseFloat(data.delivery.latitude);
+                const lng = parseFloat(data.delivery.longitude);
+                const latlng = L.latLng(lat, lng);
+                
+                if (deliveryMarker) {
+                    deliveryMarker.setLatLng(latlng);
+                } else {
+                    deliveryMarker = L.marker(latlng, { icon: createDeliveryIcon() })
+                        .addTo(map)
+                        .bindPopup(`<b>${data.delivery.name}</b><br>Delivery Partner`);
+                }
+                
+                document.getElementById('overlayDeliveryStatus').textContent = data.delivery.status || 'Online';
+                updateDeliveryStatusBadge(data.delivery.status);
+                
+                if (customerMarker) {
+                    fetchRoute(latlng, customerMarker.getLatLng());
+                }
+            }
+        })
+        .catch(err => console.error('Error fetching delivery location:', err));
+}
+
+function updateCustomerLocation() {
+    if (IS_CUSTOMER) {
+        // Customer shares their GPS location live via watchPosition.
+        return;
+    }
+    
+    // Delivery person views customer's saved location
+    fetch(`/api/customer/location/${ORDER_NUMBER}/`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.customer && data.customer.latitude != null && data.customer.longitude != null) {
+                const lat = parseFloat(data.customer.latitude);
+                const lng = parseFloat(data.customer.longitude);
+                setCustomerMarker(L.latLng(lat, lng));
+            }
+        })
+        .catch(err => console.error('Error fetching customer location:', err));
+}
+
+function setCustomerMarker(latlng) {
+    if (customerMarker) {
+        customerMarker.setLatLng(latlng);
+    } else {
+        customerMarker = L.marker(latlng, { icon: createCustomerIcon() })
+            .addTo(map)
+            .bindPopup('<b>Customer Location</b><br>Delivery Destination');
+    }
+    
+    if (deliveryMarker) {
+        fetchRoute(deliveryMarker.getLatLng(), latlng);
+        fitMapBounds();
+    }
+}
+
+function setDeliveryMarker(latlng) {
+    if (deliveryMarker) {
+        deliveryMarker.setLatLng(latlng);
+    } else {
+        deliveryMarker = L.marker(latlng, { icon: createDeliveryIcon() })
+            .addTo(map)
+            .bindPopup('<b>Delivery Partner</b><br>Live Location');
+    }
+    
+    if (customerMarker) {
+        fetchRoute(latlng, customerMarker.getLatLng());
+        fitMapBounds();
+    }
+}
+
+function fetchRoute(origin, destination) {
+    // Use OSRM (Open Source Routing Machine) - free and no API key needed!
+    const modeMap = {
+        'driving': 'driving',
+        'cycling': 'cycling',
+        'foot': 'walking'
+    };
+    
+    const osrmMode = modeMap[currentTravelMode];
+    const url = `https://router.project-osrm.org/route/v1/${osrmMode}/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=polyline&steps=true`;
+    
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            if (data.routes && data.routes.length > 0) {
+                const route = data.routes[0];
+                
+                // Remove old polyline
+                if (routePolyline) {
+                    map.removeLayer(routePolyline);
+                }
+                
+                // Decode polyline coordinates
+                const coordinates = decodePolyline(route.geometry);
+                
+                const colorMap = {
+                    'driving': '#3498db',
+                    'cycling': '#f39c12',
+                    'foot': '#2ecc71'
+                };
+                
+                routePolyline = L.polyline(coordinates, {
+                    color: colorMap[currentTravelMode],
+                    weight: 5,
+                    opacity: 0.8,
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                }).addTo(map);
+                
+                updateRouteDetails(route);
+                renderRouteSteps(route);
+            }
+        })
+        .catch(err => console.error('Error fetching route:', err));
+}
+
+function updateRouteDetails(route) {
+    const distanceKm = (route.distance / 1000).toFixed(1);
+    const durationMin = Math.round(route.duration / 60);
+    
+    document.getElementById('overlayDistance').textContent = distanceKm + ' km';
+    document.getElementById('overlayEta').textContent = durationMin + ' min';
+}
+
+function renderRouteSteps(route) {
+    if (!routeStepsElement) return;
+    const steps = route.legs[0].steps || [];
+    if (steps.length === 0) {
+        routeStepsElement.innerHTML = '<div style="color:#555;">No step-by-step directions available.</div>';
+        return;
+    }
+    routeStepsElement.innerHTML = steps.slice(0, 5).map((step, index) => {
+        const instruction = step.maneuver.instruction || step.name || 'Continue';
+        const distance = (step.distance / 1000).toFixed(2);
+        return `
+            <div class="route-step">
+                <div class="route-step-number">${index + 1}</div>
+                <div>
+                    <div>${instruction}</div>
+                    <div style="color:#718096; font-size:0.8rem;">${distance} km</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function switchMode(mode) {
+    currentTravelMode = mode;
+    if (deliveryMarker && customerMarker) {
+        fetchRoute(deliveryMarker.getLatLng(), customerMarker.getLatLng());
+    }
+}
+
+function fitMapBounds() {
+    if (deliveryMarker && customerMarker) {
+        const group = L.featureGroup([deliveryMarker, customerMarker]);
+        map.fitBounds(group.getBounds().pad(0.1), { animate: true });
+    }
+}
+
+function manualRefresh() {
+    if (!IS_DELIVERY || deliveryWatchId === null) {
+        updateDeliveryLocation();
+    }
+    updateCustomerLocation();
+}
+
+function startGeolocationWatch() {
+    if (!navigator.geolocation) {
+        setWatchStatus('Geolocation unavailable', 'red');
+        return;
+    }
+
+    setWatchStatus('Waiting for GPS fix...', 'orange');
+    const positionOptions = { enableHighAccuracy: true, timeout: 40000, maximumAge: 5000 };
+
+    navigator.geolocation.getCurrentPosition(
+        position => {
+            const role = IS_CUSTOMER ? 'customer' : IS_DELIVERY ? 'delivery' : 'view';
+            handleGeolocationUpdate(position, role);
+        },
+        error => {
+            console.warn('Initial geolocation error:', error);
+            if (error.code === error.TIMEOUT) {
+                retryGeolocation();
+            }
+        },
+        positionOptions
+    );
+
+    if (IS_CUSTOMER) {
+        customerWatchId = navigator.geolocation.watchPosition(
+            position => {
+                handleGeolocationUpdate(position, 'customer');
+            },
+            error => handleGeolocationError(error, 'Customer'),
+            positionOptions
+        );
+    }
+
+    if (IS_DELIVERY) {
+        deliveryWatchId = navigator.geolocation.watchPosition(
+            position => {
+                handleGeolocationUpdate(position, 'delivery');
+            },
+            error => handleGeolocationError(error, 'Delivery'),
+            positionOptions
+        );
+    }
+
+    if (!IS_CUSTOMER && !IS_DELIVERY) {
+        setWatchStatus('View only mode', 'gray');
+    }
+}
+
+function handleGeolocationUpdate(position, role) {
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
+    const accuracy = position.coords.accuracy;
+    const latlng = L.latLng(lat, lng);
+
+    setWatchStatus('Live watch active', 'green');
+    setAccuracy(accuracy);
+    setGPSQuality(accuracy);
+    setCurrentCoordinates(lat, lng);
+    updateLastUpdate();
+    setLocationSource('Browser GPS');
+    centerMapOnCurrentLocation(latlng);
+
+    if (role === 'customer') {
+        setCustomerMarker(latlng);
+        sendCustomerLocation(lat, lng);
+    } else if (role === 'delivery') {
+        setDeliveryMarker(latlng);
+        sendDeliveryLocation(lat, lng);
+    }
+
+    checkGeofence();
+}
+
+function setCurrentCoordinates(lat, lng) {
+    if (!coordinatesElement) return;
+    coordinatesElement.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+}
+
+function updateLastUpdate() {
+    if (!lastUpdateElement) return;
+    const now = new Date();
+    lastUpdateElement.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function setGPSQuality(accuracy) {
+    const qualityElement = document.getElementById('overlayQuality');
+    if (!qualityElement) return;
+    if (accuracy <= 15) {
+        qualityElement.textContent = 'Excellent';
+    } else if (accuracy <= 40) {
+        qualityElement.textContent = 'Good';
+    } else if (accuracy <= 100) {
+        qualityElement.textContent = 'Fair';
+    } else {
+        qualityElement.textContent = 'Poor';
+    }
+}
+
+function updateDeliveryStatusBadge(status) {
+    if (!statusBadgeElement) return;
+    const statusMap = {
+        'available': { text: '● Online', class: 'online' },
+        'on_delivery': { text: '● Delivering', class: 'on_delivery' },
+        'offline': { text: '● Offline', class: 'offline' }
+    };
+    const statusInfo = statusMap[status] || { text: '● Unknown', class: 'offline' };
+    statusBadgeElement.textContent = statusInfo.text;
+    statusBadgeElement.className = 'status-badge ' + statusInfo.class;
+}
+
+function setLocationSource(text) {
+    if (!sourceElement) return;
+    sourceElement.textContent = text;
+}
+
+function stopGeolocationWatch() {
+    if (customerWatchId !== null) {
+        navigator.geolocation.clearWatch(customerWatchId);
+        customerWatchId = null;
+    }
+    if (deliveryWatchId !== null) {
+        navigator.geolocation.clearWatch(deliveryWatchId);
+        deliveryWatchId = null;
+    }
+}
+
+function retryGeolocation() {
+    setWatchStatus('Retrying GPS...', 'orange');
+    if (!navigator.geolocation) {
+        setWatchStatus('Geolocation unavailable', 'red');
+        return;
+    }
+
+    stopGeolocationWatch();
+    const role = IS_DELIVERY ? 'delivery' : IS_CUSTOMER ? 'customer' : 'view';
+    const highAccuracyOptions = { enableHighAccuracy: true, timeout: 40000, maximumAge: 0 };
+    const lowAccuracyOptions = { enableHighAccuracy: false, timeout: 25000, maximumAge: 0 };
+
+    navigator.geolocation.getCurrentPosition(
+        position => {
+            handleGeolocationUpdate(position, role);
+            startGeolocationWatch();
+        },
+        error => {
+            handleGeolocationError(error, 'Retry');
+            if (error.code === error.TIMEOUT) {
+                setWatchStatus('Retrying with lower GPS accuracy...', 'orange');
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        handleGeolocationUpdate(position, role);
+                        startGeolocationWatch();
+                    },
+                    err => {
+                        handleGeolocationError(err, 'Retry fallback');
+                        if (err.code !== err.PERMISSION_DENIED) {
+                            startGeolocationWatch();
+                        }
+                    },
+                    lowAccuracyOptions
+                );
+            } else if (error.code !== error.PERMISSION_DENIED) {
+                startGeolocationWatch();
+            }
+        },
+        highAccuracyOptions
+    );
+}
+
+function notifyBrowser(title, body) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+        new Notification(title, { body, icon: '/static/icons/notification-icon.png' });
+    }
+}
+
+function requestNotificationPermission() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
+
+function handleProofFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        if (proofPreviewImage) {
+            proofPreviewImage.src = e.target.result;
+            proofPreview.style.display = 'block';
+        }
+    };
+    reader.readAsDataURL(file);
+    uploadProofFile(file);
+}
+
+function uploadProofFile(file) {
+    if (!CSRF_TOKEN) return;
+
+    const formData = new FormData();
+    formData.append('proof_image', file);
+
+    fetch(`/order/${ORDER_NUMBER}/upload-proof/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': CSRF_TOKEN
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            setWatchStatus('Proof uploaded successfully', 'green');
+        } else {
+            setWatchStatus(data.message || 'Proof upload failed', 'red');
+        }
+    })
+    .catch(err => {
+        console.error('Error uploading proof:', err);
+        setWatchStatus('Proof upload failed', 'red');
+    });
+}
+
+function markOrderDelivered() {
+    if (!CSRF_TOKEN) return;
+    fetch(`/dashboard/delivery/order/${ORDER_ID}/update-status/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': CSRF_TOKEN
+        },
+        body: `status=delivered`
+    })
+    .then(() => {
+        setWatchStatus('Order marked delivered', 'green');
+        if (markDeliveredBtn) markDeliveredBtn.disabled = true;
+    })
+    .catch(err => {
+        console.error('Error marking delivered:', err);
+        setWatchStatus('Failed to mark delivered', 'red');
+    });
+}
+
+function toggleDeliveryStatus() {
+    if (!CSRF_TOKEN) return;
+    const newStatus = toggleStatusBtn.textContent.includes('Offline') ? 'offline' : 'available';
+    fetch(`/dashboard/delivery/location/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify({ status: newStatus })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            setWatchStatus(`Status updated to ${newStatus}`, 'green');
+            updateDeliveryStatusBadge(newStatus);
+            toggleStatusBtn.textContent = newStatus === 'offline' ? '🟢 Go Available' : '🔴 Go Offline';
+        } else {
+            setWatchStatus('Status update failed', 'red');
+        }
+    })
+    .catch(err => {
+        console.error('Error updating status:', err);
+        setWatchStatus('Status update failed', 'red');
+    });
+}
+
+function centerMapOnCurrentLocation(latlng) {
+    if (!map) return;
+    if (!hasCenteredOnCurrentLocation) {
+        map.setView(latlng, 16);
+        hasCenteredOnCurrentLocation = true;
+    } else {
+        map.panTo(latlng, { animate: true });
+    }
+}
+
+function handleGeolocationError(error, role) {
+    console.error(`${role} geolocation error:`, error);
+    if (error.code === error.TIMEOUT) {
+        setWatchStatus(`${role} watch timed out, retrying...`, 'orange');
+        setTimeout(retryGeolocation, 2000);
+    } else if (error.code === error.PERMISSION_DENIED) {
+        setWatchStatus('GPS permission denied', 'red');
+    } else {
+        setWatchStatus(`${role} watch error: ${error.message}`, 'red');
+    }
+}
+
+function setWatchStatus(text, color) {
+    if (!watchStatusElement) return;
+    watchStatusElement.textContent = text;
+    watchStatusElement.style.color = color;
+}
+
+function setAccuracy(value) {
+    if (!accuracyElement) return;
+    accuracyElement.textContent = value != null ? `${Math.round(value)} m` : '-- m';
+}
+
+function checkGeofence() {
+    if (!deliveryMarker || !customerMarker || !geofenceNoticeElement) return;
+    const origin = deliveryMarker.getLatLng();
+    const target = customerMarker.getLatLng();
+    const distance = computeDistanceMeters(origin.lat, origin.lng, target.lat, target.lng);
+    if (distance <= GEOFENCE_RADIUS_METERS) {
+        geofenceNoticeElement.textContent = `Within ${GEOFENCE_RADIUS_METERS}m of delivery location. Ready to deliver.`;
+        geofenceNoticeElement.className = 'geofence-status green';
+        if (lastNotifiedDistance === null || lastNotifiedDistance > GEOFENCE_RADIUS_METERS) {
+            notifyBrowser('Delivery Nearby', 'Delivery person is within the arrival zone.');
+        }
+    } else if (distance <= GEOFENCE_RADIUS_METERS * 3) {
+        geofenceNoticeElement.textContent = `Nearby delivery location (${Math.round(distance)} m).`;
+        geofenceNoticeElement.className = 'geofence-status orange';
+        if (lastNotifiedDistance === null || lastNotifiedDistance > GEOFENCE_RADIUS_METERS * 3) {
+            notifyBrowser('Delivery Approaching', `Delivery person is ${Math.round(distance)}m away.`);
+        }
+    } else {
+        geofenceNoticeElement.textContent = `Delivery distance ${Math.round(distance)} m.`;
+        geofenceNoticeElement.className = 'geofence-status red';
+    }
+    lastNotifiedDistance = distance;
+}
+
+function computeDistanceMeters(lat1, lng1, lat2, lng2) {
+    const toRad = x => x * Math.PI / 180;
+    const R = 6371000;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+function stopGeolocationWatch() {
+    if (customerWatchId !== null) {
+        navigator.geolocation.clearWatch(customerWatchId);
+        customerWatchId = null;
+    }
+    if (deliveryWatchId !== null) {
+        navigator.geolocation.clearWatch(deliveryWatchId);
+        deliveryWatchId = null;
+    }
+}
+
+function startAutoRefresh() {
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    autoRefreshInterval = setInterval(() => {
+        updateDeliveryLocation();
+        updateCustomerLocation();
+    }, 5000);
+    
+    manualRefresh();
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+}
+
+function sendCustomerLocation(lat, lng) {
+    if (!CSRF_TOKEN) return;
+    
+    fetch(`/api/order/${ORDER_NUMBER}/update-location/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify({ latitude: lat, longitude: lng })
+    })
+    .catch(err => console.error('Error sending customer location:', err));
+}
+
+function sendDeliveryLocation(lat, lng) {
+    if (!CSRF_TOKEN) return;
+    
+    fetch(`/dashboard/delivery/location/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify({ latitude: lat, longitude: lng, status: 'on_delivery' })
+    })
+    .catch(err => console.error('Error sending delivery location:', err));
+}
+
+// Decode OSRM polyline encoding
+function decodePolyline(encoded) {
+    let points = [];
+    let index = 0, lat = 0, lng = 0;
+    
+    while (index < encoded.length) {
+        let result = 0, shift = 0;
+        let c;
+        
+        do {
+            c = encoded.charCodeAt(index++) - 63;
+            result |= (c & 0x1f) << shift;
+            shift += 5;
+        } while (c >= 0x20);
+        
+        lat += ((result & 1) ? ~(result >> 1) : (result >> 1));
+        
+        result = 0;
+        shift = 0;
+        do {
+            c = encoded.charCodeAt(index++) - 63;
+            result |= (c & 0x1f) << shift;
+            shift += 5;
+        } while (c >= 0x20);
+        
+        lng += ((result & 1) ? ~(result >> 1) : (result >> 1));
+        
+        points.push([lat / 1e5, lng / 1e5]);
+    }
+    
+    return points;
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Initialize when page loads
+window.addEventListener('load', initMap);
+</script>
+
+{% endblock %}

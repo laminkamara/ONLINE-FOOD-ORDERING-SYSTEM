@@ -1,12 +1,12 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load custom_filters %}
 
 {% block title %}My Profile - yoni Fast Food Restaurant{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row g-4">
-        <div class="col-lg-9 col-xl-10">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="fw-bold mb-2">
@@ -40,7 +40,7 @@
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-money-bill-wave fa-3x me-3 opacity-50"></i>
                                 <div>
-                                    <h3 class="fw-bold mb-0">Le {{ total_spent|floatformat:0|intcomma }}</h3>
+                                    <h3 class="fw-bold mb-0">Le {{ total_spent }}</h3>
                                     <p class="mb-0 small opacity-75">Total Spent</p>
                                 </div>
                             </div>
@@ -70,14 +70,18 @@
                 </div>
                 <div class="card-body p-4">
                     <div class="text-center mb-4">
-                        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 120px; height: 120px;">
-                            <i class="fas fa-user fa-4x text-primary"></i>
+                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 overflow-hidden" style="width: 120px; height: 120px; background: rgba(33, 150, 243, 0.1);">
+                            {% if customer.profile_photo %}
+                                <img src="{{ customer.profile_photo.url }}" alt="Profile photo" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                                <i class="fas fa-user fa-4x text-primary"></i>
+                            {% endif %}
                         </div>
                         <h3 class="fw-bold">{{ user.get_full_name|default:user.username }}</h3>
                         <p class="text-muted mb-0">{{ user.email }}</p>
                     </div>
 
-                    <form method="post">
+                    <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
 
                         <div class="row g-3">
@@ -105,6 +109,12 @@
                                 </label>
                                 <input type="text" class="form-control form-control-lg" name="last_name" value="{{ user.last_name }}">
                             </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-image me-2 text-primary"></i>Profile Photo
+                                </label>
+                                <input type="file" class="form-control form-control-lg" name="profile_photo" accept="image/*">
+                            </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">
                                     <i class="fas fa-phone me-2 text-primary"></i>Phone Number
@@ -127,7 +137,6 @@
                     </form>
                 </div>
             </div>
-        </div>
     </div>
 </div>
 {% endblock %}

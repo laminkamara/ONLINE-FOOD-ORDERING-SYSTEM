@@ -86,12 +86,12 @@ main_branch = Branch.objects.get(name__contains="Main Branch")
 
 tables_data = [
     {"table_number": "T-01", "capacity": 4, "status": "available"},
-    {"table_number": "T-02", "capacity": 2, "status": "occupied", "current_bill": 45000},
+    {"table_number": "T-02", "capacity": 2, "status": "occupied", "current_bill": 45},
     {"table_number": "T-03", "capacity": 6, "status": "available"},
     {"table_number": "T-04", "capacity": 4, "status": "reserved"},
-    {"table_number": "T-05", "capacity": 8, "status": "occupied", "current_bill": 312000},
+    {"table_number": "T-05", "capacity": 8, "status": "occupied", "current_bill": 312},
     {"table_number": "T-06", "capacity": 2, "status": "available"},
-    {"table_number": "T-07", "capacity": 4, "status": "occupied", "current_bill": 88000},
+    {"table_number": "T-07", "capacity": 4, "status": "occupied", "current_bill": 88},
     {"table_number": "T-08", "capacity": 4, "status": "available"},
     {"table_number": "T-09", "capacity": 6, "status": "available"},
     {"table_number": "T-10", "capacity": 2, "status": "reserved"},
@@ -138,49 +138,49 @@ beverages_cat = Category.objects.get(name="Beverages")
 
 menu_items_data = [
     # Burgers
-    {"name": "The Yoni Burger", "description": "Our signature beef burger with special sauce, lettuce, tomato, and cheese", "price": 85000, "category": burgers_cat, "is_popular": True, "rating": 4.8, "review_count": 154},
-    {"name": "Spicy Zinger Burger", "description": "Crispy chicken burger with spicy mayo and jalapeños", "price": 65000, "category": burgers_cat, "is_new": True, "rating": 4.6, "review_count": 89},
-    {"name": "Garden Fresh Veggie Burger", "description": "Plant-based patty with fresh vegetables and vegan sauce", "price": 55000, "category": burgers_cat, "rating": 4.4, "review_count": 67},
-    {"name": "Double Cheese Burger", "description": "Double beef patty with extra cheese and bacon", "price": 95000, "category": burgers_cat, "is_popular": True, "rating": 4.7, "review_count": 198},
-    
+    {"name": "The Yoni Burger", "description": "Our signature beef burger with special sauce, lettuce, tomato, and cheese", "price": 85, "category": burgers_cat, "is_popular": True, "rating": 4.8, "review_count": 154},
+    {"name": "Spicy Zinger Burger", "description": "Crispy chicken burger with spicy mayo and jalapeños", "price": 65, "category": burgers_cat, "is_new": True, "rating": 4.6, "review_count": 89},
+    {"name": "Garden Fresh Veggie Burger", "description": "Plant-based patty with fresh vegetables and vegan sauce", "price": 55, "category": burgers_cat, "rating": 4.4, "review_count": 67},
+    {"name": "Double Cheese Burger", "description": "Double beef patty with extra cheese and bacon", "price": 95, "category": burgers_cat, "is_popular": True, "rating": 4.7, "review_count": 198},
+
     # Pizza
-    {"name": "Large Pepperoni Feast", "description": "Classic pepperoni pizza with extra mozzarella cheese", "price": 120000, "category": pizza_cat, "is_popular": True, "rating": 4.9, "review_count": 203},
-    {"name": "Beef Suya Pizza", "description": "Fusion pizza with spiced beef, peppers, and onions", "price": 135000, "category": pizza_cat, "rating": 4.8, "review_count": 145},
-    {"name": "Margherita Classic", "description": "Traditional pizza with tomato, mozzarella, and basil", "price": 95000, "category": pizza_cat, "rating": 4.7, "review_count": 167},
-    {"name": "BBQ Chicken Pizza", "description": "Grilled chicken with BBQ sauce and red onions", "price": 125000, "category": pizza_cat, "is_new": True, "rating": 4.6, "review_count": 78},
-    
+    {"name": "Large Pepperoni Feast", "description": "Classic pepperoni pizza with extra mozzarella cheese", "price": 120, "category": pizza_cat, "is_popular": True, "rating": 4.9, "review_count": 203},
+    {"name": "Beef Suya Pizza", "description": "Fusion pizza with spiced beef, peppers, and onions", "price": 135, "category": pizza_cat, "rating": 4.8, "review_count": 145},
+    {"name": "Margherita Classic", "description": "Traditional pizza with tomato, mozzarella, and basil", "price": 95, "category": pizza_cat, "rating": 4.7, "review_count": 167},
+    {"name": "BBQ Chicken Pizza", "description": "Grilled chicken with BBQ sauce and red onions", "price": 125, "category": pizza_cat, "is_new": True, "rating": 4.6, "review_count": 78},
+
     # Local Dishes
-    {"name": "Classic Jollof with Grilled Chicken", "description": "Authentic Sierra Leonean jollof rice with tender grilled chicken", "price": 85000, "category": local_cat, "is_popular": True, "rating": 4.8, "review_count": 312},
-    {"name": "Supreme Jollof Box", "description": "Large jollof rice with assorted meats and fried plantain", "price": 95000, "category": local_cat, "rating": 4.7, "review_count": 198},
-    {"name": "Cassava Leaf with Rice", "description": "Traditional cassava leaf stew served with white rice", "price": 75000, "category": local_cat, "is_popular": True, "rating": 4.9, "review_count": 256},
-    
+    {"name": "Classic Jollof with Grilled Chicken", "description": "Authentic Sierra Leonean jollof rice with tender grilled chicken", "price": 85, "category": local_cat, "is_popular": True, "rating": 4.8, "review_count": 312},
+    {"name": "Supreme Jollof Box", "description": "Large jollof rice with assorted meats and fried plantain", "price": 95, "category": local_cat, "rating": 4.7, "review_count": 198},
+    {"name": "Cassava Leaf with Rice", "description": "Traditional cassava leaf stew served with white rice", "price": 75, "category": local_cat, "is_popular": True, "rating": 4.9, "review_count": 256},
+
     # Rice Dishes
-    {"name": "Fried Rice & Plantain Special", "description": "Chinese-style fried rice with sweet fried plantains", "price": 75000, "category": rice_cat, "rating": 4.7, "review_count": 156},
-    {"name": "Beef Fried Rice", "description": "Fried rice with tender beef strips and vegetables", "price": 85000, "category": rice_cat, "rating": 4.6, "review_count": 134},
-    {"name": "Chicken Biryani", "description": "Aromatic basmati rice with spiced chicken", "price": 95000, "category": rice_cat, "is_new": True, "rating": 4.8, "review_count": 92},
-    
+    {"name": "Fried Rice & Plantain Special", "description": "Chinese-style fried rice with sweet fried plantains", "price": 75, "category": rice_cat, "rating": 4.7, "review_count": 156},
+    {"name": "Beef Fried Rice", "description": "Fried rice with tender beef strips and vegetables", "price": 85, "category": rice_cat, "rating": 4.6, "review_count": 134},
+    {"name": "Chicken Biryani", "description": "Aromatic basmati rice with spiced chicken", "price": 95, "category": rice_cat, "is_new": True, "rating": 4.8, "review_count": 92},
+
     # Chicken
-    {"name": "Crispy Peri-Peri Wings", "description": "Spicy grilled chicken wings (12 pieces) with peri-peri sauce", "price": 95000, "category": chicken_cat, "is_popular": True, "rating": 4.7, "review_count": 178},
-    {"name": "Grilled Chicken Quarter", "description": "Juicy quarter chicken with herbs and spices", "price": 85000, "category": chicken_cat, "rating": 4.6, "review_count": 145},
-    {"name": "Chicken Wings (6 pcs)", "description": "Crispy fried chicken wings with dipping sauce", "price": 55000, "category": chicken_cat, "rating": 4.5, "review_count": 112},
-    
+    {"name": "Crispy Peri-Peri Wings", "description": "Spicy grilled chicken wings (12 pieces) with peri-peri sauce", "price": 95, "category": chicken_cat, "is_popular": True, "rating": 4.7, "review_count": 178},
+    {"name": "Grilled Chicken Quarter", "description": "Juicy quarter chicken with herbs and spices", "price": 85, "category": chicken_cat, "rating": 4.6, "review_count": 145},
+    {"name": "Chicken Wings (6 pcs)", "description": "Crispy fried chicken wings with dipping sauce", "price": 55, "category": chicken_cat, "rating": 4.5, "review_count": 112},
+
     # Sides
-    {"name": "Cheesy Garlic Breadsticks", "description": "Fresh baked breadsticks with garlic butter and cheese", "price": 35000, "category": sides_cat, "rating": 4.5, "review_count": 92},
-    {"name": "French Fries (Large)", "description": "Crispy golden french fries", "price": 25000, "category": sides_cat, "is_popular": True, "rating": 4.6, "review_count": 234},
-    {"name": "Coleslaw", "description": "Fresh homemade coleslaw", "price": 15000, "category": sides_cat, "rating": 4.3, "review_count": 67},
-    {"name": "Extra Fried Plantain", "description": "Sweet fried plantain slices", "price": 20000, "category": sides_cat, "is_popular": True, "rating": 4.8, "review_count": 189},
-    
+    {"name": "Cheesy Garlic Breadsticks", "description": "Fresh baked breadsticks with garlic butter and cheese", "price": 35, "category": sides_cat, "rating": 4.5, "review_count": 92},
+    {"name": "French Fries (Large)", "description": "Crispy golden french fries", "price": 25, "category": sides_cat, "is_popular": True, "rating": 4.6, "review_count": 234},
+    {"name": "Coleslaw", "description": "Fresh homemade coleslaw", "price": 15, "category": sides_cat, "rating": 4.3, "review_count": 67},
+    {"name": "Extra Fried Plantain", "description": "Sweet fried plantain slices", "price": 20, "category": sides_cat, "is_popular": True, "rating": 4.8, "review_count": 189},
+
     # Desserts
-    {"name": "Double Choco Brownie", "description": "Rich chocolate brownie with vanilla ice cream", "price": 45000, "category": desserts_cat, "rating": 4.9, "review_count": 134},
-    {"name": "Vanilla Ice Cream", "description": "Creamy vanilla ice cream (3 scoops)", "price": 25000, "category": desserts_cat, "rating": 4.6, "review_count": 87},
-    {"name": "Fruit Salad", "description": "Fresh seasonal fruit salad", "price": 30000, "category": desserts_cat, "rating": 4.5, "review_count": 56},
-    
+    {"name": "Double Choco Brownie", "description": "Rich chocolate brownie with vanilla ice cream", "price": 45, "category": desserts_cat, "rating": 4.9, "review_count": 134},
+    {"name": "Vanilla Ice Cream", "description": "Creamy vanilla ice cream (3 scoops)", "price": 25, "category": desserts_cat, "rating": 4.6, "review_count": 87},
+    {"name": "Fruit Salad", "description": "Fresh seasonal fruit salad", "price": 30, "category": desserts_cat, "rating": 4.5, "review_count": 56},
+
     # Beverages
-    {"name": "Fresh Ginger Beer", "description": "Homemade spicy ginger beer", "price": 20000, "category": beverages_cat, "is_popular": True, "rating": 4.7, "review_count": 187},
-    {"name": "Hibiscus Juice (Bissap)", "description": "Traditional hibiscus flower drink", "price": 15000, "category": beverages_cat, "is_popular": True, "rating": 4.8, "review_count": 203},
-    {"name": "Fresh Lemonade", "description": "Freshly squeezed lemonade with mint", "price": 18000, "category": beverages_cat, "rating": 4.6, "review_count": 145},
-    {"name": "Coca-Cola (500ml)", "description": "Chilled Coca-Cola", "price": 12000, "category": beverages_cat, "rating": 4.5, "review_count": 312},
-    {"name": "Mineral Water", "description": "Pure bottled water (500ml)", "price": 8000, "category": beverages_cat, "rating": 4.4, "review_count": 234},
+    {"name": "Fresh Ginger Beer", "description": "Homemade spicy ginger beer", "price": 20, "category": beverages_cat, "is_popular": True, "rating": 4.7, "review_count": 187},
+    {"name": "Hibiscus Juice (Bissap)", "description": "Traditional hibiscus flower drink", "price": 15, "category": beverages_cat, "is_popular": True, "rating": 4.8, "review_count": 203},
+    {"name": "Fresh Lemonade", "description": "Freshly squeezed lemonade with mint", "price": 18, "category": beverages_cat, "rating": 4.6, "review_count": 145},
+    {"name": "Coca-Cola (500ml)", "description": "Chilled Coca-Cola", "price": 12, "category": beverages_cat, "rating": 4.5, "review_count": 312},
+    {"name": "Mineral Water", "description": "Pure bottled water (500ml)", "price": 8, "category": beverages_cat, "rating": 4.4, "review_count": 234},
 ]
 
 for item_data in menu_items_data:

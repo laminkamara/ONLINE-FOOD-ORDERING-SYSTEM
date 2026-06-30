@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load custom_filters %}
 
 {% block title %}Admin Dashboard - yoni Fast Food Restaurant{% endblock %}
 
@@ -19,7 +20,6 @@
 <div class="container-fluid py-4">
     <div class="row g-4">
         <!-- Main Content -->
-        <div class="col-lg-9 col-xl-10">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
@@ -182,7 +182,7 @@
                                     {% if table.status == 'occupied' and table.current_bill %}
                                     <div class="mt-3 pt-3 border-top">
                                         <p class="small text-muted mb-0">
-                                            <i class="fas fa-receipt me-1"></i>Bill: <span class="fw-bold">Le {{ table.current_bill|floatformat:0|intcomma }}</span>
+                                            <i class="fas fa-receipt me-1"></i>Bill: <span class="fw-bold">Le {{ table.current_bill }}</span>
                                         </p>
                                     </div>
                                     {% endif %}
@@ -219,7 +219,6 @@
                 </div>
             </div>
             {% endif %}
-        </div>
     </div>
 </div>
 

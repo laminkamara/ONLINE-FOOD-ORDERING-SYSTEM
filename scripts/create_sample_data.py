@@ -42,10 +42,10 @@ print("Creating tables...")
 downtown = Branch.objects.get(name="Downtown Hub")
 tables_data = [
     {"table_number": "T-01", "capacity": 4, "status": "available"},
-    {"table_number": "T-02", "capacity": 2, "status": "occupied", "current_bill": 45000},
+    {"table_number": "T-02", "capacity": 2, "status": "occupied", "current_bill": 45},
     {"table_number": "T-03", "capacity": 6, "status": "available"},
     {"table_number": "T-04", "capacity": 4, "status": "reserved"},
-    {"table_number": "T-05", "capacity": 8, "status": "occupied", "current_bill": 120000},
+    {"table_number": "T-05", "capacity": 8, "status": "occupied", "current_bill": 120},
     {"table_number": "T-06", "capacity": 2, "status": "available"},
 ]
 
@@ -74,28 +74,28 @@ beverages_cat = Category.objects.get(name="Beverages")
 
 menu_items_data = [
     # Burgers
-    {"name": "The Yoni Burger", "description": "Our signature beef burger with special sauce", "price": 85000, "category": burgers_cat, "is_popular": True, "rating": 4.8, "review_count": 154},
-    {"name": "Spicy Zinger Burger", "description": "Crispy chicken burger with spicy mayo", "price": 65000, "category": burgers_cat, "is_new": True, "rating": 4.6, "review_count": 89},
-    {"name": "Garden Fresh Veggie Burger", "description": "Plant-based patty with fresh vegetables", "price": 55000, "category": burgers_cat, "rating": 4.4, "review_count": 67},
+    {"name": "The Yoni Burger", "description": "Our signature beef burger with special sauce", "price": 85, "category": burgers_cat, "is_popular": True, "rating": 4.8, "review_count": 154},
+    {"name": "Spicy Zinger Burger", "description": "Crispy chicken burger with spicy mayo", "price": 65, "category": burgers_cat, "is_new": True, "rating": 4.6, "review_count": 89},
+    {"name": "Garden Fresh Veggie Burger", "description": "Plant-based patty with fresh vegetables", "price": 55, "category": burgers_cat, "rating": 4.4, "review_count": 67},
     
     # Pizza
-    {"name": "Large Pepperoni Feast", "description": "Classic pepperoni pizza with extra cheese", "price": 120000, "category": pizza_cat, "is_popular": True, "rating": 4.9, "review_count": 203},
-    {"name": "Beef Suya Pizza", "description": "Fusion pizza with spiced beef and peppers", "price": 135000, "category": pizza_cat, "rating": 4.8, "review_count": 145},
+    {"name": "Large Pepperoni Feast", "description": "Classic pepperoni pizza with extra cheese", "price": 120, "category": pizza_cat, "is_popular": True, "rating": 4.9, "review_count": 203},
+    {"name": "Beef Suya Pizza", "description": "Fusion pizza with spiced beef and peppers", "price": 135, "category": pizza_cat, "rating": 4.8, "review_count": 145},
     
     # Local Dishes
-    {"name": "Classic Jollof with Grilled Chicken", "description": "Authentic Sierra Leonean jollof rice with chicken", "price": 85000, "category": local_cat, "is_popular": True, "rating": 4.8, "review_count": 312},
-    {"name": "Supreme Jollof Box", "description": "Large jollof rice with assorted meats", "price": 95000, "category": local_cat, "rating": 4.7, "review_count": 198},
-    {"name": "Fried Rice & Plantain Special", "description": "Fried rice with sweet plantains", "price": 75000, "category": local_cat, "rating": 4.7, "review_count": 156},
+    {"name": "Classic Jollof with Grilled Chicken", "description": "Authentic Sierra Leonean jollof rice with chicken", "price": 85, "category": local_cat, "is_popular": True, "rating": 4.8, "review_count": 312},
+    {"name": "Supreme Jollof Box", "description": "Large jollof rice with assorted meats", "price": 95, "category": local_cat, "rating": 4.7, "review_count": 198},
+    {"name": "Fried Rice & Plantain Special", "description": "Fried rice with sweet plantains", "price": 75, "category": local_cat, "rating": 4.7, "review_count": 156},
     
     # Sides
-    {"name": "Crispy Peri-Peri Wings", "description": "Spicy chicken wings (12 pieces)", "price": 95000, "category": sides_cat, "is_popular": True, "rating": 4.7, "review_count": 178},
-    {"name": "Cheesy Garlic Breadsticks", "description": "Fresh breadsticks with garlic butter", "price": 35000, "category": sides_cat, "rating": 4.5, "review_count": 92},
+    {"name": "Crispy Peri-Peri Wings", "description": "Spicy chicken wings (12 pieces)", "price": 95, "category": sides_cat, "is_popular": True, "rating": 4.7, "review_count": 178},
+    {"name": "Cheesy Garlic Breadsticks", "description": "Fresh breadsticks with garlic butter", "price": 35, "category": sides_cat, "rating": 4.5, "review_count": 92},
     
     # Desserts
-    {"name": "Double Choco Brownie", "description": "Rich chocolate brownie with ice cream", "price": 45000, "category": desserts_cat, "rating": 4.9, "review_count": 134},
+    {"name": "Double Choco Brownie", "description": "Rich chocolate brownie with ice cream", "price": 45, "category": desserts_cat, "rating": 4.9, "review_count": 134},
     
     # Beverages
-    {"name": "Fresh Ginger Beer", "description": "Homemade ginger beer", "price": 20000, "category": beverages_cat, "rating": 4.6, "review_count": 87},
+    {"name": "Fresh Ginger Beer", "description": "Homemade ginger beer", "price": 20, "category": beverages_cat, "rating": 4.6, "review_count": 87},
 ]
 
 for item_data in menu_items_data:

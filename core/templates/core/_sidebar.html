@@ -70,8 +70,10 @@
         <!-- User Info -->
         <div class="p-4 border-bottom sidebar-header">
             <div class="text-center text-white">
-                <div class="bg-white bg-opacity-25 rounded-circle d-inline-flex align-items-center justify-content-center mb-3 sidebar-avatar">
-                    {% if user_role == 'admin' %}
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 sidebar-avatar" style="background: rgba(255,255,255,0.15); overflow: hidden;">
+                    {% if user_profile.profile_photo %}
+                        <img src="{{ user_profile.profile_photo.url }}" alt="Profile photo" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% elif user_role == 'admin' %}
                         <i class="fas fa-user-shield fa-2x text-white"></i>
                     {% elif user_role == 'waitress' %}
                         <i class="fas fa-user-tie fa-2x text-white"></i>
@@ -93,6 +95,19 @@
                 <a href="{% url 'admin_dashboard' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
                     <i class="fas fa-chart-line fa-lg me-3 sidebar-icon"></i>
                     <span>Dashboard</span>
+                </a>
+                <a href="{% url 'live_chat' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'live_chat' %}active{% endif %}">
+                    <i class="fas fa-comments fa-lg me-3 sidebar-icon"></i>
+                    <span>Chat</span>
+                </a>
+                <a href="{% url 'notifications' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+                    <i class="fas fa-bell fa-lg me-3 sidebar-icon"></i>
+                    <span>Notifications</span>
+                    {% if notification_count > 0 %}<span class="badge bg-danger ms-auto">{{ notification_count }}</span>{% endif %}
+                </a>
+                <a href="{% url 'profile' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                    <i class="fas fa-user fa-lg me-3 sidebar-icon"></i>
+                    <span>My Profile</span>
                 </a>
                 <a href="{% url 'manage_users' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}">
                     <i class="fas fa-users fa-lg me-3 sidebar-icon"></i>
@@ -125,6 +140,15 @@
                     <i class="fas fa-tachometer-alt fa-lg me-3 sidebar-icon"></i>
                     <span>Dashboard</span>
                 </a>
+                <a href="{% url 'live_chat' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'live_chat' %}active{% endif %}">
+                    <i class="fas fa-comments fa-lg me-3 sidebar-icon"></i>
+                    <span>Chat</span>
+                </a>
+                <a href="{% url 'notifications' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+                    <i class="fas fa-bell fa-lg me-3 sidebar-icon"></i>
+                    <span>Notifications</span>
+                    {% if notification_count > 0 %}<span class="badge bg-danger ms-auto">{{ notification_count }}</span>{% endif %}
+                </a>
                 <a href="{% url 'floor_map' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'floor_map' %}active{% endif %}">
                     <i class="fas fa-map fa-lg me-3 sidebar-icon"></i>
                     <span>Floor Map</span>
@@ -138,6 +162,26 @@
                     <span>Order Queue</span>
                 </a>
 
+            {% elif user_role == 'delivery' %}
+                <!-- Delivery Navigation -->
+                <a href="{% url 'delivery_dashboard' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'delivery_dashboard' %}active{% endif %}">
+                    <i class="fas fa-motorcycle fa-lg me-3 sidebar-icon"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'live_chat' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'live_chat' %}active{% endif %}">
+                    <i class="fas fa-comments fa-lg me-3 sidebar-icon"></i>
+                    <span>Chat</span>
+                </a>
+                <a href="{% url 'notifications' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+                    <i class="fas fa-bell fa-lg me-3 sidebar-icon"></i>
+                    <span>Notifications</span>
+                    {% if notification_count > 0 %}<span class="badge bg-danger ms-auto">{{ notification_count }}</span>{% endif %}
+                </a>
+                <a href="{% url 'profile' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                    <i class="fas fa-user fa-lg me-3 sidebar-icon"></i>
+                    <span>My Profile</span>
+                </a>
+
             {% else %}
                 <!-- Customer Navigation -->
                 <a href="{% url 'customer_dashboard' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'customer_dashboard' %}active{% endif %}">
@@ -147,6 +191,15 @@
                 <a href="{% url 'customer_orders' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'customer_orders' %}active{% endif %}">
                     <i class="fas fa-shopping-bag fa-lg me-3 sidebar-icon"></i>
                     <span>My Orders</span>
+                </a>
+                <a href="{% url 'live_chat' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'live_chat' %}active{% endif %}">
+                    <i class="fas fa-comments fa-lg me-3 sidebar-icon"></i>
+                    <span>Chat</span>
+                </a>
+                <a href="{% url 'notifications' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+                    <i class="fas fa-bell fa-lg me-3 sidebar-icon"></i>
+                    <span>Notifications</span>
+                    {% if notification_count > 0 %}<span class="badge bg-danger ms-auto">{{ notification_count }}</span>{% endif %}
                 </a>
                 <a href="{% url 'customer_profile' %}" class="sidebar-nav-link nav-link d-flex align-items-center rounded-3 mb-2 px-3 py-2 {% if request.resolver_match.url_name == 'customer_profile' %}active{% endif %}">
                     <i class="fas fa-user fa-lg me-3 sidebar-icon"></i>

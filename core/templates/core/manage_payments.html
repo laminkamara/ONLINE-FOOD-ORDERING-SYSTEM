@@ -1,12 +1,12 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load custom_filters %}
 
 {% block title %}Manage Payments - yoni Fast Food Restaurant{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row g-4">
-        <div class="col-lg-9 col-xl-10">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="fw-bold mb-2">
@@ -26,7 +26,7 @@
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-money-bill-wave fa-3x me-3 opacity-50"></i>
                                 <div>
-                                    <h3 class="fw-bold mb-0">Le {{ total_revenue|floatformat:0|intcomma }}</h3>
+                                    <h3 class="fw-bold mb-0">Le {{ total_revenue }}</h3>
                                     <p class="mb-0 small opacity-75">Total Revenue</p>
                                 </div>
                             </div>
@@ -94,7 +94,7 @@
                                 <tr>
                                     <td class="py-3 fw-semibold">#{{ payment.order.order_number }}</td>
                                     <td class="py-3">{% if payment.order.customer.user %}{{ payment.order.customer.user.get_full_name|default:payment.order.customer.user.username }}{% else %}N/A{% endif %}</td>
-                                    <td class="py-3 fw-semibold text-primary">Le {{ payment.amount|floatformat:0|intcomma }}</td>
+                                    <td class="py-3 fw-semibold text-primary">Le {{ payment.amount }}</td>
                                     <td class="py-3">
                                         {% if payment.receipt_image %}
                                             <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#receiptModal{{ payment.id }}">
@@ -131,7 +131,6 @@
                     </div>
                 </div>
             </div>
-        </div>
     </div>
 </div>
 

@@ -1,11 +1,11 @@
 {% extends 'core/base.html' %}
+{% load custom_filters %}
 
 {% block title %}Order #{{ order.order_number }} - yoni Fast Food Restaurant{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row g-4">
-        <div class="col-lg-9 col-xl-10">
             <div class="order-detail" style="max-width: 900px; margin: 0 auto;">
                 <h1 class="section-title" style="text-align: center; margin-bottom: 3rem;">Order #{{ order.order_number }}</h1>
         <div class="order-info" style="background: var(--bg-light); padding: 2rem; border-radius: 10px; margin-bottom: 2rem;">
@@ -72,9 +72,9 @@
                     {% for item in order.items.all %}
                     <tr style="border-bottom: 1px solid var(--border);">
                         <td style="padding: 1rem;">{{ item.menu_item.name }}</td>
-                        <td style="padding: 1rem;">Le {{ item.price|floatformat:0 }}</td>
+                        <td style="padding: 1rem;">Le {{ item.price }}</td>
                         <td style="padding: 1rem; text-align: center;">{{ item.quantity }}</td>
-                        <td style="padding: 1rem; text-align: right;"><strong>Le {{ item.get_subtotal|floatformat:0 }}</strong></td>
+                        <td style="padding: 1rem; text-align: right;"><strong>Le {{ item.get_subtotal }}</strong></td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -83,22 +83,80 @@
             <div style="background: white; padding: 1.5rem; border-radius: 10px; margin-top: 1rem;">
                 <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
                     <span>Subtotal:</span>
-                    <span>Le {{ order.subtotal|floatformat:0 }}</span>
+                    <span>Le {{ order.subtotal }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
                     <span>Delivery Fee:</span>
-                    <span>Le {{ order.delivery_fee|floatformat:0 }}</span>
+                    <span>Le {{ order.delivery_fee }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
                     <span>GST (5%):</span>
-                    <span>Le {{ order.gst|floatformat:0 }}</span>
+                    <span>Le {{ order.gst }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 1rem 0 0.5rem 0; margin-top: 1rem; border-top: 3px solid var(--primary-purple);">
                     <strong style="font-size: 1.5rem;">Total:</strong>
-                    <strong style="font-size: 1.5rem; color: var(--primary-purple);">Le {{ order.total_amount|floatformat:0 }}</strong>
+                    <strong style="font-size: 1.5rem; color: var(--primary-purple);">Le {{ order.total_amount }}</strong>
                 </div>
             </div>
         </div>
+
+        {% if order.status == 'delivered' and user_role == 'customer' %}
+        <!-- Rating Section -->
+        <div style="margin-top: 3rem; padding: 2rem; background: var(--bg-light); border-radius: 10px;">
+            <h3 style="margin-bottom: 1.5rem;">⭐ Rate This Order</h3>
+            
+            {% if order.customer_rating > 0 %}
+                <div style="background: white; padding: 1.5rem; border-radius: 10px; border-left: 5px solid #10b981;">
+                    <p style="color: #10b981; font-weight: bold; margin-bottom: 1rem;"><i class="fas fa-check-circle me-2"></i>Thank you for your rating!</p>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div>
+                            <h4 style="margin: 0; font-size: 1.8rem; font-weight: bold;">{{ order.customer_rating }}</h4>
+                            <p style="margin: 0; color: #6b7280; font-size: 0.85rem;">out of 5</p>
+                        </div>
+                        <div style="font-size: 1.5rem; color: #fbbf24;">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= order.customer_rating %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% if order.customer_feedback %}
+                    <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                        <p style="margin: 0; color: #6b7280; font-size: 0.9rem; font-weight: 600;">Your Feedback:</p>
+                        <p style="margin: 0.5rem 0 0 0; color: #374151;">{{ order.customer_feedback }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <form method="post" action="{% url 'order_detail' order.id %}">
+                    {% csrf_token %}
+                    <div style="background: white; padding: 1.5rem; border-radius: 10px;">
+                        <label class="form-label fw-semibold mb-3">How would you rate your order? <span style="color: #ef4444;">*</span></label>
+                        <div class="rating-stars-detail" style="display: flex; gap: 0.75rem; font-size: 2rem; margin-bottom: 1.5rem;">
+                            {% for value in "54321" %}
+                            <input type="radio" name="rating" value="{{ value }}" id="ratingDetail{{ value }}" style="display: none;" required>
+                            <label for="ratingDetail{{ value }}" class="star-label-detail" style="cursor: pointer; color: #d1d5db; transition: color 0.2s; margin: 0;">
+                                <i class="fas fa-star"></i>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Additional Comments</label>
+                            <textarea class="form-control" name="feedback" rows="3" placeholder="Share your thoughts about the food and service..."></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Rating
+                        </button>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+        {% endif %}
         
         <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center;">
             {% if user_role == 'customer' %}
@@ -109,7 +167,33 @@
             {% endif %}
         </div>
             </div>
-        </div>
     </div>
 </div>
+
+<style>
+    .star-label-detail:hover,
+    .star-label-detail:hover ~ .star-label-detail {
+        color: #fbbf24 !important;
+    }
+    
+    input[type="radio"]:checked ~ .star-label-detail,
+    input[type="radio"]:checked ~ .star-label-detail ~ .star-label-detail {
+        color: #fbbf24 !important;
+    }
+</style>
+
+<script>
+    document.querySelectorAll('.star-label-detail').forEach(label => {
+        label.addEventListener('click', function() {
+            const labels = {
+                '5': '⭐⭐⭐⭐⭐ Excellent!',
+                '4': '⭐⭐⭐⭐ Great!',
+                '3': '⭐⭐⭐ Good',
+                '2': '⭐⭐ Okay',
+                '1': '⭐ Poor'
+            };
+        });
+    });
+</script>
+
 {% endblock %}

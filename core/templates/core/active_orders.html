@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load custom_filters %}
 
 {% block title %}Active Orders - yoni Fast Food Restaurant{% endblock %}
 
@@ -92,7 +93,7 @@
                                     <td class="py-3">{% if order.customer.user %}{{ order.customer.user.get_full_name|default:order.customer.user.username }}{% else %}N/A{% endif %}</td>
                                     <td class="py-3">{{ order.table.table_number|default:"-" }}</td>
                                     <td class="py-3">{{ order.items.count }} items</td>
-                                    <td class="py-3 fw-semibold text-primary">Le {{ order.total_amount|floatformat:0|intcomma }}</td>
+                                    <td class="py-3 fw-semibold text-primary">Le {{ order.total_amount }}</td>
                                     <td class="py-3">
                                         <span class="badge bg-{% if order.status == 'pending' or order.status == 'received' %}warning text-dark{% else %}info{% endif %}">
                                             {{ order.get_status_display }}

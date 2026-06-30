@@ -1,31 +1,40 @@
+import json
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.db import transaction
 from django.db import models
-from .models import Customer, Restaurant, MenuItem, Cart, CartItem, Order, OrderItem, Branch, Table, Category, ChatMessage, Payment, Address
+from django.db.models import Sum, F, DecimalField, ExpressionWrapper, Avg
+from django.db.models import Prefetch
+from django.urls import reverse
+from .models import Customer, Restaurant, MenuItem, Cart, CartItem, Order, OrderItem, Branch, Table, Category, ChatMessage, Payment, Address, DeliveryPerson, Notification
 from django.http import JsonResponse
+from django.core.paginator import Paginator
+from django.db.models import Count
+from django.utils.dateparse import parse_date
 
 
 # Helper function to determine user role
 def get_user_role(user):
     """Determine user role based on permissions or groups.
 
-    IMPORTANT: Any user that is_staff is treated as *admin* in the old logic.
-    We fix it so that:
-      - admin = superuser (and optionally staff superusers)
+    Values:
+      - admin = superuser
+      - delivery = member of "Delivery" group
       - waitress = member of "Waitress" group
       - customer = default
     """
     if user.is_superuser:
         return 'admin'
-
+    if user.groups.filter(name='Delivery').exists():
+        return 'delivery'
     if user.groups.filter(name='Waitress').exists():
         return 'waitress'
-
     return 'customer'
 
 
@@ -37,6 +46,16 @@ def get_or_create_customer(user):
     if customer is None:
         customer, _ = Customer.objects.get_or_create(user=user)
     return customer
+
+
+def get_or_create_delivery_person(user):
+    """Return a DeliveryPerson object for the authenticated delivery user."""
+    if not user.is_authenticated:
+        return None
+    delivery_person = getattr(user, 'delivery_person', None)
+    if delivery_person is None:
+        delivery_person, _ = DeliveryPerson.objects.get_or_create(user=user)
+    return delivery_person
 
 
 def home(request):
@@ -166,6 +185,9 @@ def user_login(request):
             elif role == 'waitress':
                 messages.success(request, 'Welcome back!')
                 return redirect('waitress_dashboard')
+            elif role == 'delivery':
+                messages.success(request, 'Welcome back, Delivery Partner!')
+                return redirect('delivery_dashboard')
             else:
                 messages.success(request, 'Login successful!')
                 return redirect('customer_dashboard')
@@ -191,8 +213,169 @@ def dashboard(request):
         return redirect('admin_dashboard')
     elif role == 'waitress':
         return redirect('waitress_dashboard')
+    elif role == 'delivery':
+        return redirect('delivery_dashboard')
     else:
         return redirect('customer_dashboard')
+
+
+@login_required
+def delivery_dashboard(request):
+    """Delivery partner dashboard for active delivery tasks and live location."""
+    if not request.user.groups.filter(name='Delivery').exists():
+        return redirect('dashboard')
+
+    delivery_profile, _ = DeliveryPerson.objects.get_or_create(user=request.user)
+    assigned_orders_base = Order.objects.filter(delivery_person=request.user).order_by('-created_at')
+    assigned_orders = assigned_orders_base
+    status_filter = request.GET.get('status_filter', '').strip().lower()
+
+    if status_filter == 'pending':
+        assigned_orders = assigned_orders_base.filter(status__in=['received', 'preparing'])
+    elif status_filter == 'on_the_way':
+        assigned_orders = assigned_orders_base.filter(status='on_the_way')
+    elif status_filter == 'completed':
+        assigned_orders = assigned_orders_base.filter(status='delivered')
+
+    available_orders = Order.objects.filter(delivery_person__isnull=True, status__in=['received', 'preparing', 'ready', 'on_the_way']).order_by('-created_at')[:10]
+    unread_notifications = Notification.objects.filter(user=request.user, is_read=False).count()
+
+    context = {
+        'delivery_profile': delivery_profile,
+        'assigned_orders': assigned_orders,
+        'available_orders': available_orders,
+        'unread_notifications': unread_notifications,
+        'status_filter': status_filter,
+        # Task summary counts for dashboard
+        'assigned_total_count': assigned_orders_base.count(),
+        'assigned_pending_count': assigned_orders_base.filter(status__in=['received','preparing']).count(),
+        'assigned_on_the_way_count': assigned_orders_base.filter(status='on_the_way').count(),
+        'assigned_completed_count': assigned_orders_base.filter(status='delivered').count(),
+        'user_role': get_user_role(request.user),
+    }
+    return render(request, 'core/delivery_dashboard.html', context)
+
+
+@login_required
+def assign_order(request, order_id):
+    """Assign an order to a delivery person (admin only)"""
+    if not request.user.is_superuser:
+        messages.error(request, 'Access denied.')
+        return redirect('dashboard')
+
+    order = get_object_or_404(Order, id=order_id)
+
+    if request.method == 'POST':
+        delivery_user_id = request.POST.get('delivery_person')
+        set_on_the_way = request.POST.get('set_on_the_way') == 'on'
+
+        if delivery_user_id:
+            try:
+                user = User.objects.get(id=int(delivery_user_id))
+                order.delivery_person = user
+                if set_on_the_way:
+                    order.status = 'on_the_way'
+                order.save()
+                create_notification(user, f'You have been assigned order #{order.order_number}.', reverse('delivery_dashboard'))
+                messages.success(request, f'Order #{order.order_number} assigned to {user.get_full_name() or user.username}.')
+            except User.DoesNotExist:
+                messages.error(request, 'Selected delivery person not found.')
+        else:
+            messages.error(request, 'No delivery person selected.')
+
+    return redirect('manage_orders')
+
+
+@login_required
+def delivery_update_location(request):
+    if not request.user.groups.filter(name='Delivery').exists():
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        delivery_profile, _ = DeliveryPerson.objects.get_or_create(user=request.user)
+
+        content_type = request.META.get('CONTENT_TYPE', '')
+        if content_type.startswith('application/json'):
+            try:
+                data = json.loads(request.body.decode('utf-8') or '{}')
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+        else:
+            data = request.POST
+
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+        status = data.get('status')
+
+        if latitude:
+            delivery_profile.current_latitude = float(latitude)
+        if longitude:
+            delivery_profile.current_longitude = float(longitude)
+        if status in dict(DeliveryPerson.STATUS_CHOICES):
+            delivery_profile.status = status
+
+        delivery_profile.save()
+
+        if request.content_type == 'application/json':
+            return JsonResponse({
+                'success': True,
+                'message': 'Delivery location updated successfully',
+                'latitude': float(delivery_profile.current_latitude) if delivery_profile.current_latitude else None,
+                'longitude': float(delivery_profile.current_longitude) if delivery_profile.current_longitude else None,
+                'status': delivery_profile.status,
+            })
+
+        messages.success(request, 'Delivery status updated successfully.')
+
+    return redirect('delivery_dashboard')
+
+
+@login_required
+@require_http_methods(['POST'])
+def upload_delivery_proof(request, order_number):
+    if not request.user.groups.filter(name='Delivery').exists():
+        return JsonResponse({'success': False, 'message': 'Permission denied'}, status=403)
+
+    order = get_object_or_404(Order, order_number=order_number, delivery_person=request.user)
+
+    proof_image = request.FILES.get('proof_image')
+    if not proof_image:
+        return JsonResponse({'success': False, 'message': 'No proof image uploaded'}, status=400)
+
+    order.delivery_proof = proof_image
+    order.save()
+
+    return JsonResponse({'success': True, 'message': 'Proof uploaded successfully'})
+
+
+@login_required
+def notifications(request):
+    notifications_list = Notification.objects.filter(user=request.user).order_by('-created_at')
+    context = {
+        'notifications': notifications_list,
+        'user_role': get_user_role(request.user),
+    }
+    return render(request, 'core/notifications.html', context)
+
+
+@login_required
+def notifications_unread_count(request):
+    count = Notification.objects.filter(user=request.user, is_read=False).count()
+    return JsonResponse({'unread_count': count})
+
+
+@login_required
+def mark_notification_read(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save()
+    if notification.url:
+        return redirect(notification.url)
+    return redirect('notifications')
+
+
+def create_notification(user, message, url=''):
+    Notification.objects.create(user=user, message=message, url=url)
 
 
 # Admin Dashboard
@@ -475,6 +658,8 @@ def checkout(request):
         payment_method = request.POST.get('payment_method', 'mobile')
         transaction_id = request.POST.get('transaction_id', '').strip()
         receipt_image = request.FILES.get('receipt_image')
+        gps_latitude = request.POST.get('gps_latitude', '').strip()
+        gps_longitude = request.POST.get('gps_longitude', '').strip()
 
         first_item = cart.items.first()
         restaurant = first_item.menu_item.restaurant
@@ -505,6 +690,8 @@ def checkout(request):
                 gst=gst,
                 total_amount=total,
                 notes=notes,
+                customer_latitude=Decimal(gps_latitude) if gps_latitude else None,
+                customer_longitude=Decimal(gps_longitude) if gps_longitude else None,
             )
 
             if table and table.status != 'occupied':
@@ -556,6 +743,38 @@ def order_detail(request, order_id):
             messages.error(request, 'Customer profile not found. Please contact support.')
             return redirect('dashboard')
         order = get_object_or_404(Order, id=order_id, customer=request.user.customer)
+
+    # Handle rating submission
+    if request.method == 'POST' and order.status == 'delivered' and not request.user.groups.filter(name='Waitress').exists():
+        rating = request.POST.get('rating')
+        feedback = request.POST.get('feedback', '').strip()
+
+        if rating:
+            try:
+                order.customer_rating = Decimal(rating)
+                order.customer_feedback = feedback
+                order.save()
+
+                # Propagate order-level rating to menu items in the order
+                try:
+                    new_rating = Decimal(rating)
+                    for oi in order.items.select_related('menu_item').all():
+                        mi = oi.menu_item
+                        current_total = (mi.rating or Decimal('0')) * mi.review_count
+                        updated_count = mi.review_count + 1
+                        updated_total = current_total + new_rating
+                        # update rating to one decimal place
+                        mi.rating = (updated_total / updated_count).quantize(Decimal('0.1'))
+                        mi.review_count = updated_count
+                        mi.save()
+                except Exception:
+                    pass
+                messages.success(request, 'Thank you for rating your order!')
+                return redirect('order_detail', order_id=order_id)
+            except Exception:
+                messages.error(request, 'Unable to submit rating. Please try again.')
+        else:
+            messages.error(request, 'Please select a rating before submitting.')
 
     context = {
         'order': order,
@@ -633,24 +852,60 @@ def order_tracking(request, order_number):
 
 @login_required
 def profile(request):
-    if not hasattr(request.user, 'customer'):
+    if request.user.groups.filter(name='Delivery').exists():
+        delivery_profile = get_or_create_delivery_person(request.user)
+        if request.method == 'POST':
+            first_name = request.POST.get('first_name', '')
+            last_name = request.POST.get('last_name', '')
+            phone = request.POST.get('phone', '')
+            status = request.POST.get('status', delivery_profile.status)
+            profile_photo = request.FILES.get('profile_photo')
+
+            request.user.first_name = first_name
+            request.user.last_name = last_name
+            request.user.save()
+
+            delivery_profile.phone = phone
+            delivery_profile.status = status if status in dict(DeliveryPerson.STATUS_CHOICES) else delivery_profile.status
+            if profile_photo:
+                delivery_profile.profile_photo = profile_photo
+            delivery_profile.save()
+
+            messages.success(request, 'Profile updated successfully')
+            return redirect('profile')
+
+        context = {
+            'delivery_profile': delivery_profile,
+            'user_role': get_user_role(request.user),
+        }
+        return render(request, 'core/delivery_profile.html', context)
+
+    customer = get_or_create_customer(request.user)
+    if customer is None:
         messages.error(request, 'Customer profile not found. Please contact support.')
         return redirect('home')
-    
-    customer = request.user.customer
 
     if request.method == 'POST':
+        first_name = request.POST.get('first_name', '')
+        last_name = request.POST.get('last_name', '')
         phone = request.POST.get('phone', '')
         address = request.POST.get('address', '')
+        profile_photo = request.FILES.get('profile_photo')
+
+        request.user.first_name = first_name
+        request.user.last_name = last_name
+        request.user.save()
 
         customer.phone = phone
         customer.address = address
+        if profile_photo:
+            customer.profile_photo = profile_photo
         customer.save()
 
         messages.success(request, 'Profile updated successfully')
         return redirect('profile')
 
-    context = {'customer': customer}
+    context = {'customer': customer, 'user_role': get_user_role(request.user)}
     return render(request, 'core/profile.html', context)
 
 
@@ -659,24 +914,41 @@ def profile(request):
 def live_chat(request):
     """Live chat interface for customers and staff"""
     user = request.user
-    
-    # Get staff users for customer to chat with
-    if not (user.is_superuser or user.groups.filter(name='Waitress').exists()):
-        # Customer - show list of staff to chat with (admins + waitresses)
-        staff_users = User.objects.filter(
-            models.Q(is_superuser=True) | models.Q(groups__name='Waitress')
-        ).exclude(id=user.id).distinct()
-        chat_partners = staff_users
-    else:
-        # Staff - show all customers who have sent messages
-        chat_partners = User.objects.filter(
-            sent_messages__isnull=False
-        ).exclude(id__in=User.objects.filter(is_superuser=True).values('id')).distinct()
+    partner_id = request.GET.get('partner_id')
+    user_role = get_user_role(user)
 
-    
+    if user_role == 'customer':
+        # Customer - show list of staff to chat with (admins + waitresses + delivery staff)
+        chat_partners = User.objects.filter(
+            models.Q(is_superuser=True) |
+            models.Q(groups__name__in=['Waitress', 'Delivery']) |
+            models.Q(sent_messages__receiver=user) |
+            models.Q(received_messages__sender=user)
+        ).exclude(id=user.id).distinct()
+    elif user_role == 'delivery':
+        # Delivery users should see assigned order customers plus any existing chat partners
+        chat_partners = User.objects.filter(
+            models.Q(sent_messages__receiver=user) |
+            models.Q(received_messages__sender=user) |
+            models.Q(customer__orders__delivery_person=user)
+        ).exclude(id=user.id).distinct()
+    else:
+        # Admin and waitress users should chat with all customers that have orders or existing chats
+        chat_partners = User.objects.filter(
+            models.Q(sent_messages__receiver=user) |
+            models.Q(received_messages__sender=user) |
+            models.Q(customer__orders__isnull=False)
+        ).exclude(id=user.id).distinct()
+
+    if partner_id:
+        selected_partner = User.objects.filter(id=partner_id).first()
+        if selected_partner and not chat_partners.filter(id=selected_partner.id).exists():
+            chat_partners = list(chat_partners) + [selected_partner]
+
     context = {
         'chat_partners': chat_partners,
-        'user_role': get_user_role(user),
+        'user_role': user_role,
+        'initial_partner_id': partner_id,
     }
     return render(request, 'core/live_chat.html', context)
 
@@ -745,9 +1017,12 @@ def manage_users(request):
     # Build list of users with computed role to simplify template logic
     users_with_role = []
     waitress_group, _ = Group.objects.get_or_create(name='Waitress')
+    delivery_group, _ = Group.objects.get_or_create(name='Delivery')
     for u in users:
         if u.is_superuser:
             role = 'superuser'
+        elif delivery_group in u.groups.all():
+            role = 'delivery'
         elif waitress_group in u.groups.all():
             role = 'waitress'
         elif u.is_staff:
@@ -756,7 +1031,11 @@ def manage_users(request):
             role = 'customer'
         users_with_role.append({'user': u, 'role': role})
 
-    context = {'users_with_role': users_with_role, 'user_role': get_user_role(request.user)}
+    context = {
+        'users': users,
+        'users_with_role': users_with_role,
+        'user_role': get_user_role(request.user),
+    }
     return render(request, 'core/manage_users.html', context)
 
 
@@ -768,7 +1047,9 @@ def manage_menu(request):
         return redirect('home')
 
     
-    menu_items = MenuItem.objects.all().order_by('category', 'name')
+    # Prefetch recent customer reviews (orders with a customer rating) for each menu item
+    review_qs = OrderItem.objects.select_related('order', 'order__customer__user').filter(order__customer_rating__gt=0).order_by('-order__created_at')
+    menu_items = MenuItem.objects.all().order_by('category', 'name').prefetch_related(Prefetch('orderitem_set', queryset=review_qs, to_attr='reviews'))
     categories = Category.objects.all()
     restaurants = Restaurant.objects.all().order_by('name')
     context = {
@@ -793,11 +1074,15 @@ def manage_orders(request):
     processing_orders = orders.filter(status__in=['preparing', 'ready', 'on_the_way']).count()
     completed_orders = orders.filter(status='delivered').count()
     
+    # Delivery persons for assign modal
+    delivery_persons = DeliveryPerson.objects.select_related('user').all()
+
     context = {
         'orders': orders,
         'pending_orders': pending_orders,
         'processing_orders': processing_orders,
         'completed_orders': completed_orders,
+        'delivery_persons': delivery_persons,
         'user_role': get_user_role(request.user),
     }
     return render(request, 'core/manage_orders.html', context)
@@ -836,15 +1121,26 @@ def view_reports(request):
     
     # Basic stats
     total_orders = Order.objects.count()
-    total_revenue = sum(order.total_amount for order in Order.objects.filter(status='delivered'))
+    total_revenue = Order.objects.filter(status='delivered').aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
     total_customers = Customer.objects.count()
     total_menu_items = MenuItem.objects.count()
-    
+    # Average order value (delivered orders)
+    avg_order_value = Order.objects.filter(status='delivered').aggregate(avg=Avg('total_amount'))['avg'] or Decimal('0')
+
+    # Top selling items (by quantity ordered) and revenue
+    revenue_expr = ExpressionWrapper(F('orderitem__quantity') * F('orderitem__price'), output_field=DecimalField(max_digits=14, decimal_places=2))
+    top_items_qs = MenuItem.objects.annotate(
+        times_ordered=Sum('orderitem__quantity'),
+        revenue=Sum(revenue_expr)
+    ).filter(times_ordered__isnull=False).order_by('-times_ordered')[:10]
+
     context = {
         'total_orders': total_orders,
         'total_revenue': total_revenue,
         'total_customers': total_customers,
         'total_menu_items': total_menu_items,
+        'avg_order_value': avg_order_value,
+        'top_items': top_items_qs,
         'user_role': get_user_role(request.user),
     }
     return render(request, 'core/view_reports.html', context)
@@ -886,22 +1182,24 @@ def customer_orders(request):
 @login_required
 def customer_profile(request):
     """Edit customer profile"""
-    if not hasattr(request.user, 'customer'):
+    customer = get_or_create_customer(request.user)
+    if customer is None:
         messages.error(request, 'Customer profile not found. Please contact support.')
         return redirect('home')
-    
-    customer = request.user.customer
     
     if request.method == 'POST':
         first_name = request.POST.get('first_name', '')
         last_name = request.POST.get('last_name', '')
         phone = request.POST.get('phone', '')
+        profile_photo = request.FILES.get('profile_photo')
         
         request.user.first_name = first_name
         request.user.last_name = last_name
         request.user.save()
         
         customer.phone = phone
+        if profile_photo:
+            customer.profile_photo = profile_photo
         customer.save()
         
         messages.success(request, 'Profile updated successfully!')
@@ -1089,18 +1387,29 @@ def user_create(request):
 
             # Assign role
             waitress_group, _ = Group.objects.get_or_create(name='Waitress')
+            delivery_group, _ = Group.objects.get_or_create(name='Delivery')
             if role == 'superuser':
                 user.is_superuser = True
                 user.is_staff = True
+                user.groups.remove(waitress_group, delivery_group)
                 user.save()
             elif role == 'waitress':
                 user.is_superuser = False
                 user.is_staff = False
                 user.groups.add(waitress_group)
+                user.groups.remove(delivery_group)
                 user.save()
+            elif role == 'delivery':
+                user.is_superuser = False
+                user.is_staff = False
+                user.groups.add(delivery_group)
+                user.groups.remove(waitress_group)
+                user.save()
+                DeliveryPerson.objects.get_or_create(user=user)
             else:  # customer
                 user.is_superuser = False
                 user.is_staff = False
+                user.groups.remove(waitress_group, delivery_group)
                 user.save()
                 Customer.objects.create(user=user)
 
@@ -1128,21 +1437,26 @@ def user_edit(request, user_id):
             role = request.POST.get('role', 'customer')
 
             waitress_group, _ = Group.objects.get_or_create(name='Waitress')
+            delivery_group, _ = Group.objects.get_or_create(name='Delivery')
             if role == 'superuser':
                 user.is_superuser = True
                 user.is_staff = True
-                user.groups.remove(waitress_group)
+                user.groups.remove(waitress_group, delivery_group)
             elif role == 'waitress':
                 user.is_superuser = False
                 user.is_staff = False
                 user.groups.add(waitress_group)
-                # ensure customer profile removed if existed?
+                user.groups.remove(delivery_group)
+            elif role == 'delivery':
+                user.is_superuser = False
+                user.is_staff = False
+                user.groups.add(delivery_group)
+                user.groups.remove(waitress_group)
+                DeliveryPerson.objects.get_or_create(user=user)
             else:  # customer
                 user.is_superuser = False
                 user.is_staff = False
-                if waitress_group in user.groups.all():
-                    user.groups.remove(waitress_group)
-                # ensure Customer profile exists
+                user.groups.remove(waitress_group, delivery_group)
                 Customer.objects.get_or_create(user=user)
 
             user.save()
@@ -1151,6 +1465,37 @@ def user_edit(request, user_id):
             messages.error(request, f'Error updating user: {str(e)}')
     
     return redirect('manage_users')
+
+
+@login_required
+def delivery_claim_order(request, order_id):
+    if not request.user.groups.filter(name='Delivery').exists():
+        return redirect('dashboard')
+
+    order = get_object_or_404(Order, id=order_id)
+    if order.delivery_person is None and order.status in ['received', 'preparing', 'ready', 'on_the_way']:
+        order.delivery_person = request.user
+        order.status = 'on_the_way'
+        order.save()
+        create_notification(request.user, f'You have claimed order #{order.order_number}.', reverse('delivery_dashboard'))
+        create_notification(order.customer.user, f'Your order #{order.order_number} is now on the way.', reverse('order_tracking', kwargs={'order_number': order.order_number}))
+    return redirect('delivery_dashboard')
+
+
+@login_required
+def delivery_order_update_status(request, order_id):
+    if not request.user.groups.filter(name='Delivery').exists():
+        return redirect('dashboard')
+
+    order = get_object_or_404(Order, id=order_id, delivery_person=request.user)
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        if new_status in ['on_the_way', 'delivered']:
+            order.status = new_status
+            order.save()
+            create_notification(order.customer.user, f'Your order #{order.order_number} status has been updated to {order.get_status_display()}.', reverse('order_tracking', kwargs={'order_number': order.order_number}))
+            create_notification(request.user, f'Order #{order.order_number} status updated to {order.get_status_display()}.', reverse('delivery_dashboard'))
+    return redirect('delivery_dashboard')
 
 
 @login_required
@@ -1486,6 +1831,10 @@ def category_create(request):
                 icon=request.POST.get('icon', 'fas fa-utensils'),
                 description=request.POST.get('description', '')
             )
+            # handle uploaded icon image
+            icon_img = request.FILES.get('icon_image')
+            if icon_img:
+                category.icon_image = icon_img
             category.save()
             messages.success(request, f'Category "{category.name}" created successfully!')
         except Exception as e:
@@ -1508,6 +1857,10 @@ def category_edit(request, category_id):
             category.name = request.POST.get('name')
             category.icon = request.POST.get('icon', 'fas fa-utensils')
             category.description = request.POST.get('description', '')
+            # handle uploaded icon image
+            icon_img = request.FILES.get('icon_image')
+            if icon_img:
+                category.icon_image = icon_img
             category.save()
             messages.success(request, f'Category "{category.name}" updated successfully!')
         except Exception as e:
@@ -1532,6 +1885,113 @@ def category_delete(request, category_id):
     return redirect('admin_dashboard')
 
 
+@login_required
+def manage_reviews(request):
+    """Admin page: list and filter customer reviews with pagination"""
+    if not request.user.is_superuser:
+        messages.error(request, 'Access denied')
+        return redirect('admin_dashboard')
+
+    qs = OrderItem.objects.select_related('menu_item', 'order', 'order__customer__user').filter(order__customer_rating__gt=0).order_by('-order__created_at')
+
+    menu_item = request.GET.get('menu_item')
+    min_rating = request.GET.get('min_rating')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    if menu_item:
+        qs = qs.filter(menu_item__id=menu_item)
+    if min_rating:
+        try:
+            qs = qs.filter(order__customer_rating__gte=Decimal(min_rating))
+        except Exception:
+            pass
+    if start_date:
+        d = parse_date(start_date)
+        if d:
+            qs = qs.filter(order__created_at__date__gte=d)
+    if end_date:
+        d = parse_date(end_date)
+        if d:
+            qs = qs.filter(order__created_at__date__lte=d)
+
+    paginator = Paginator(qs, 15)
+    page = request.GET.get('page')
+    reviews_page = paginator.get_page(page)
+
+    menu_items_all = MenuItem.objects.all().order_by('name')
+
+    context = {
+        'reviews': reviews_page,
+        'menu_items_all': menu_items_all,
+        'user_role': get_user_role(request.user),
+        'request': request,
+    }
+    return render(request, 'core/manage_reviews.html', context)
+
+
+@login_required
+def manage_review_edit(request, orderitem_id):
+    """Edit a review (update order.customer_rating and customer_feedback) and recalc menu item aggregates"""
+    if not request.user.is_superuser:
+        messages.error(request, 'Permission denied')
+        return redirect('admin_dashboard')
+
+    oi = get_object_or_404(OrderItem, id=orderitem_id)
+    if request.method == 'POST':
+        try:
+            rating = request.POST.get('rating')
+            feedback = request.POST.get('feedback', '')
+            if rating is not None:
+                oi.order.customer_rating = Decimal(rating)
+            oi.order.customer_feedback = feedback
+            oi.order.save()
+
+            # Recalculate menu item aggregates
+            mi = oi.menu_item
+            agg = OrderItem.objects.filter(menu_item=mi, order__customer_rating__gt=0).aggregate(avg_rating=Avg('order__customer_rating'), cnt=Count('order__customer_rating'))
+            if agg and agg['cnt']:
+                mi.rating = Decimal(agg['avg_rating'] or 0).quantize(Decimal('0.1'))
+                mi.review_count = agg['cnt']
+            else:
+                mi.rating = Decimal('0')
+                mi.review_count = 0
+            mi.save()
+            messages.success(request, 'Review updated')
+        except Exception as e:
+            messages.error(request, f'Error updating review: {e}')
+    return redirect('manage_reviews')
+
+
+@login_required
+def manage_review_delete(request, orderitem_id):
+    """Remove rating/feedback from the order (soft delete) and recalc menu item aggregates"""
+    if not request.user.is_superuser:
+        messages.error(request, 'Permission denied')
+        return redirect('admin_dashboard')
+
+    oi = get_object_or_404(OrderItem, id=orderitem_id)
+    if request.method == 'POST':
+        try:
+            oi.order.customer_rating = Decimal('0')
+            oi.order.customer_feedback = ''
+            oi.order.save()
+
+            mi = oi.menu_item
+            agg = OrderItem.objects.filter(menu_item=mi, order__customer_rating__gt=0).aggregate(avg_rating=Avg('order__customer_rating'), cnt=Count('order__customer_rating'))
+            if agg and agg['cnt']:
+                mi.rating = Decimal(agg['avg_rating'] or 0).quantize(Decimal('0.1'))
+                mi.review_count = agg['cnt']
+            else:
+                mi.rating = Decimal('0')
+                mi.review_count = 0
+            mi.save()
+            messages.success(request, 'Review deleted')
+        except Exception as e:
+            messages.error(request, f'Error deleting review: {e}')
+    return redirect('manage_reviews')
+
+
 # PAYMENT STATUS UPDATE
 @login_required
 def payment_update_status(request, payment_id):
@@ -1550,3 +2010,109 @@ def payment_update_status(request, payment_id):
         messages.success(request, f'Payment status updated to {payment.get_status_display()}!')
     
     return redirect('manage_payments')
+
+
+# LIVE LOCATION TRACKING API VIEWS
+from django.views.decorators.http import require_http_methods
+
+@require_http_methods(["GET"])
+def get_delivery_location(request, order_id):
+    """Get delivery person's current location (JSON API)"""
+    try:
+        order = get_object_or_404(Order, id=order_id)
+        
+        if not order.delivery_person:
+            return JsonResponse({'error': 'No delivery person assigned'}, status=404)
+        
+        delivery_profile = DeliveryPerson.objects.get(user=order.delivery_person)
+        
+        return JsonResponse({
+            'success': True,
+            'delivery': {
+                'name': order.delivery_person.get_full_name() or order.delivery_person.username,
+                'phone': delivery_profile.phone,
+                'latitude': float(delivery_profile.current_latitude) if delivery_profile.current_latitude else None,
+                'longitude': float(delivery_profile.current_longitude) if delivery_profile.current_longitude else None,
+                'status': delivery_profile.status,
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@require_http_methods(["GET"])
+def get_customer_location(request, order_number):
+    """Get customer's current location during delivery (JSON API)"""
+    try:
+        order = get_object_or_404(Order, order_number=order_number)
+        
+        # Only delivery person assigned to this order can view customer location
+        if request.user != order.delivery_person:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        
+        return JsonResponse({
+            'success': True,
+            'customer': {
+                'name': order.customer.user.get_full_name() or order.customer.user.username,
+                'phone': order.phone,
+                'latitude': float(order.customer_latitude) if order.customer_latitude else None,
+                'longitude': float(order.customer_longitude) if order.customer_longitude else None,
+                'address': order.delivery_address,
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@require_http_methods(["POST"])
+@login_required
+def update_order_location(request, order_number):
+    """Update customer's current location (from customer's device during ordering)"""
+    try:
+        data = json.loads(request.body)
+        order = get_object_or_404(Order, order_number=order_number, customer__user=request.user)
+        
+        if 'latitude' in data and data['latitude']:
+            order.customer_latitude = float(data['latitude'])
+        if 'longitude' in data and data['longitude']:
+            order.customer_longitude = float(data['longitude'])
+        
+        order.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Location updated successfully',
+            'latitude': float(order.customer_latitude) if order.customer_latitude else None,
+            'longitude': float(order.customer_longitude) if order.customer_longitude else None,
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@ensure_csrf_cookie
+def order_live_map(request, order_number):
+    """Display live map with delivery person and customer locations"""
+    order = get_object_or_404(Order, order_number=order_number)
+    
+    # Verify user has access to this order
+    is_customer = request.user == order.customer.user
+    is_delivery = request.user == order.delivery_person
+    is_admin = request.user.is_superuser
+    
+    if not (is_customer or is_delivery or is_admin):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    delivery_profile = None
+    if order.delivery_person:
+        delivery_profile = getattr(order.delivery_person, 'delivery_person', None)
+
+    context = {
+        'order': order,
+        'delivery_profile': delivery_profile,
+        'is_customer': is_customer,
+        'is_delivery': is_delivery,
+        'user_role': 'customer' if is_customer else 'delivery' if is_delivery else 'admin',
+    }
+    
+    return render(request, 'core/order_live_map.html', context)

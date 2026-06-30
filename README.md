@@ -1,4 +1,4 @@
-# Online Food Ordering System
+﻿# Online Food Ordering System
 
 A complete web-based food ordering system built with Django (backend & frontend) and SQLite database.
 
@@ -54,11 +54,11 @@ Follow the prompts to create an admin account.
 python manage.py runserver
 ```
 
-The application will be available at: `http://127.0.0.1:8000/`
+The application will be available at: http://127.0.0.1:8000/
 
 ### Step 5: Access Admin Panel
 
-Visit: `http://127.0.0.1:8000/admin/`
+Visit: http://127.0.0.1:8000/admin/
 
 Login with the superuser credentials created in Step 3.
 
@@ -66,16 +66,16 @@ Login with the superuser credentials created in Step 3.
 
 ### Adding Data via Admin Panel
 
-1. Login to the admin panel at `/admin/`
+1. Login to the admin panel at /admin/
 2. Add restaurants with details (name, description, address, phone, image)
 3. Add menu items for each restaurant (name, description, price, category, image)
 4. Menu items can be marked as available/unavailable
 
 ### User Workflow
 
-1. **Register**: Create a new account at `/register/`
-2. **Login**: Login at `/login/`
-3. **Browse Restaurants**: View all restaurants at `/restaurants/`
+1. **Register**: Create a new account at /register/
+2. **Login**: Login at /login/
+3. **Browse Restaurants**: View all restaurants at /restaurants/
 4. **View Menu**: Click on a restaurant to see its menu
 5. **Add to Cart**: Select items and add to cart
 6. **Checkout**: Provide delivery details and place order

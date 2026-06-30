@@ -25,8 +25,16 @@ class TableAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'icon', 'created_at']
+    list_display = ['name', 'icon', 'icon_image_preview', 'created_at']
     search_fields = ['name', 'description']
+    readonly_fields = ['icon_image_preview']
+
+    def icon_image_preview(self, obj):
+        if obj.icon_image:
+            return format_html('<img src="{}" style="max-height: 48px; max-width: 64px; object-fit: cover;" />', obj.icon_image.url)
+        return '—'
+
+    icon_image_preview.short_description = 'Icon Preview'
 
 
 @admin.register(Restaurant)
@@ -89,16 +97,35 @@ class CartItemAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['order_number', 'customer', 'restaurant', 'branch', 'table', 'total_amount', 'status', 'created_at']
+    list_display = ['order_number', 'customer', 'restaurant', 'branch', 'table', 'total_amount', 'status', 'customer_rating', 'customer_feedback_preview', 'created_at']
     list_filter = ['status', 'restaurant', 'branch', 'created_at']
-    search_fields = ['order_number', 'customer__user__username', 'restaurant__name']
+    search_fields = ['order_number', 'customer__user__username', 'restaurant__name', 'customer_feedback']
     list_editable = ['status']
     readonly_fields = ['order_number']
+    fieldsets = (
+        ('Order Details', {
+            'fields': ('order_number', 'customer', 'restaurant', 'branch', 'table', 'delivery_person', 'delivery_address', 'phone', 'subtotal', 'delivery_fee', 'gst', 'total_amount', 'status')
+        }),
+        ('Customer Review', {
+            'fields': ('customer_rating', 'customer_feedback', 'courier_name', 'courier_rating')
+        }),
+        ('Tracking', {
+            'fields': ('estimated_time', 'notes', 'customer_latitude', 'customer_longitude', 'delivery_proof')
+        }),
+    )
+
+    def customer_feedback_preview(self, obj):
+        if not obj.customer_feedback:
+            return '—'
+        return obj.customer_feedback[:60] + ('...' if len(obj.customer_feedback) > 60 else '')
+
+    customer_feedback_preview.short_description = 'Feedback'
 
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
     list_display = ['order', 'menu_item', 'quantity', 'price', 'get_subtotal']
+    search_fields = ['order__order_number', 'menu_item__name']
 
 
 @admin.register(ChatMessage)

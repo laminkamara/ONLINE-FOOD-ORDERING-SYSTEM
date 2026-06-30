@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load custom_filters %}
 
 {% block title %}Checkout - yoni Fast Food Restaurant{% endblock %}
 
@@ -23,26 +24,26 @@
                     {% for item in cart.items.all %}
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted small">{{ item.menu_item.name }} × {{ item.quantity }}</span>
-                        <span class="fw-semibold">Le {{ item.get_subtotal|floatformat:0|intcomma }}</span>
+                        <span class="fw-semibold">Le {{ item.get_subtotal }}</span>
                     </div>
                     {% endfor %}
                     <hr class="my-3">
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Subtotal:</span>
-                        <span class="fw-semibold">Le {{ subtotal|floatformat:0|intcomma }}</span>
+                        <span class="fw-semibold">Le {{ subtotal }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Delivery Fee:</span>
-                        <span class="fw-semibold">Le {{ delivery_fee|floatformat:0|intcomma }}</span>
+                        <span class="fw-semibold">Le {{ delivery_fee }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">GST (5%):</span>
-                        <span class="fw-semibold">Le {{ gst|floatformat:0|intcomma }}</span>
+                        <span class="fw-semibold">Le {{ gst }}</span>
                     </div>
                     <hr class="my-3">
                     <div class="d-flex justify-content-between">
                         <h5 class="fw-bold mb-0">Total:</h5>
-                        <h5 class="fw-bold text-primary mb-0">Le {{ total|floatformat:0|intcomma }}</h5>
+                        <h5 class="fw-bold text-primary mb-0">Le {{ total }}</h5>
                     </div>
                 </div>
             </div>
@@ -78,6 +79,17 @@
                         <div class="mb-3">
                             <label for="phone" class="form-label fw-semibold">Phone Number</label>
                             <input type="tel" id="phone" name="phone" class="form-control form-control-lg" value="{{ customer.phone }}" required placeholder="+232 XX XXX XXX">
+                        </div>
+
+                        <div class="mb-4 border rounded-3 p-3 bg-light">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label fw-semibold mb-0">Share Live Customer Location</label>
+                                <button type="button" id="shareLocationBtn" class="btn btn-outline-primary btn-sm">Use My GPS</button>
+                            </div>
+                            <p class="text-muted small mb-2">This sends your current GPS location to the delivery person so they can find the delivery target easily.</p>
+                            <div id="locationStatus" class="small text-muted">GPS will be requested when you click the button.</div>
+                            <input type="hidden" id="gps_latitude" name="gps_latitude">
+                            <input type="hidden" id="gps_longitude" name="gps_longitude">
                         </div>
 
                         <div class="mb-4">
@@ -133,6 +145,10 @@
     const mobileFields = document.getElementById('mobile-payment-fields');
     const transactionField = document.getElementById('transaction_id');
     const receiptField = document.getElementById('receipt_image');
+    const shareLocationBtn = document.getElementById('shareLocationBtn');
+    const locationStatus = document.getElementById('locationStatus');
+    const gpsLatitude = document.getElementById('gps_latitude');
+    const gpsLongitude = document.getElementById('gps_longitude');
 
     function updatePaymentFields() {
         const method = paymentMethodField.value;
@@ -145,6 +161,35 @@
 
     paymentMethodField.addEventListener('change', updatePaymentFields);
     updatePaymentFields();
+
+    shareLocationBtn.addEventListener('click', function() {
+        if (!('geolocation' in navigator)) {
+            locationStatus.textContent = 'GPS is not supported by this browser.';
+            locationStatus.className = 'small text-danger';
+            return;
+        }
+
+        shareLocationBtn.disabled = true;
+        shareLocationBtn.textContent = 'Getting location...';
+        locationStatus.textContent = 'Requesting your current location...';
+        locationStatus.className = 'small text-muted';
+
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                gpsLatitude.value = position.coords.latitude;
+                gpsLongitude.value = position.coords.longitude;
+                locationStatus.textContent = `Location ready: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`;
+                locationStatus.className = 'small text-success';
+                shareLocationBtn.textContent = 'Location Ready';
+            },
+            function(error) {
+                locationStatus.textContent = 'Unable to access GPS. You can still place the order without live location.';
+                locationStatus.className = 'small text-warning';
+                shareLocationBtn.textContent = 'Use My GPS';
+            },
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 }
+        );
+    });
 </script>
 {% endblock %}
             </div>

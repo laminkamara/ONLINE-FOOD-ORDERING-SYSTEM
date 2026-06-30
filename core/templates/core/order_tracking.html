@@ -1,11 +1,11 @@
 {% extends 'core/base.html' %}
+{% load custom_filters %}
 
 {% block title %}Track Order {{ order.order_number }} - yoni Fast Food Restaurant{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row g-4">
-        <div class="col-lg-9 col-xl-10">
             <div class="tracking-container">
         <!-- Order Status Header -->
         <div class="tracking-header">
@@ -22,6 +22,29 @@
         </div>
 
         <!-- Assigned Delivery Panel -->
+        {% if order.delivery_person %}
+        <div class="courier-card">
+            <div class="courier-avatar">{{ order.delivery_person.get_full_name|first|upper }}</div>
+            <div style="flex: 1;">
+                <h3 style="margin-bottom: 0.25rem;">Assigned Delivery</h3>
+                <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">Your delivery partner is on the way</p>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <strong>{{ order.delivery_person.get_full_name|default:order.delivery_person.username }}</strong>
+                    <span style="color: var(--text-light); font-size: 0.875rem;">• Delivery Partner</span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <a href="{% url 'order_live_map' order.order_number %}" class="btn btn-primary rounded-pill" style="white-space: nowrap;">
+                    <i class="fas fa-map-location-dot me-2"></i>Live Map
+                </a>
+            </div>
+        </div>
+        {% elif order.status in 'on_the_way,delivered' %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>A delivery partner will be assigned shortly. Check back soon!
+        </div>
+        {% endif %}
+        
         {% if order.courier_name %}
         <div class="courier-card">
             <div class="courier-avatar">{{ order.courier_name|first }}</div>
@@ -36,8 +59,7 @@
                 </div>
             </div>
             <div style="display: flex; gap: 0.5rem;">
-                <button class="btn btn-outline">📞 Call</button>
-                <button class="btn btn-outline">💬 Chat</button>
+                <a href="{% url 'live_chat' %}?partner_id={{ order.customer.user.id }}" class="btn btn-outline">💬 Chat</a>
             </div>
         </div>
         {% endif %}
@@ -102,7 +124,7 @@
                     {% for item in order.items.all %}
                     <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
                         <span>{{ item.quantity }}x {{ item.menu_item.name }}</span>
-                        <strong>Le {{ item.price|floatformat:0 }}</strong>
+                        <strong>Le {{ item.price }}</strong>
                     </div>
                     {% endfor %}
                 </div>
@@ -110,19 +132,19 @@
                 <div style="background: var(--bg-light); padding: 1.5rem; border-radius: 10px;">
                     <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
                         <span>Subtotal:</span>
-                        <span>Le {{ order.subtotal|floatformat:0 }}</span>
+                        <span>Le {{ order.subtotal }}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
                         <span>Delivery Fee:</span>
-                        <span>Le {{ order.delivery_fee|floatformat:0 }}</span>
+                        <span>Le {{ order.delivery_fee }}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
                         <span>GST (5%):</span>
-                        <span>Le {{ order.gst|floatformat:0 }}</span>
+                        <span>Le {{ order.gst }}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; padding: 1rem 0 0.5rem 0; margin-top: 1rem; border-top: 2px solid var(--primary-purple);">
                         <strong style="font-size: 1.3rem;">Total:</strong>
-                        <strong style="font-size: 1.3rem; color: var(--primary-purple);">Le {{ order.total_amount|floatformat:0 }}</strong>
+                        <strong style="font-size: 1.3rem; color: var(--primary-purple);">Le {{ order.total_amount }}</strong>
                     </div>
                 </div>
 
@@ -145,51 +167,96 @@
 
         {% if order.status == 'delivered' %}
         <div style="margin-top: 3rem; padding: 2rem; background: var(--bg-light); border-radius: 10px;">
-            <h2 style="margin-bottom: 1rem;">⭐ Rate Your Experience</h2>
+            <h2 style="margin-bottom: 1.5rem;">⭐ Rate Your Experience</h2>
 
             {% if order.customer_rating > 0 %}
-                <p class="text-success mb-3">Thank you for your rating!</p>
-                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                    <strong style="font-size: 1.5rem;">{{ order.customer_rating }}/5</strong>
-                    <span style="color: var(--warning-yellow);">
-                        {% for i in "12345" %}
-                            {% if forloop.counter <= order.customer_rating|floatformat:0 %}
-                                <i class="fas fa-star"></i>
-                            {% else %}
-                                <i class="far fa-star"></i>
-                            {% endif %}
-                        {% endfor %}
-                    </span>
-                </div>
-                {% if order.customer_feedback %}
-                <div style="background: white; padding: 1rem; border-radius: 10px;">
-                    <h5 class="mb-2">Your feedback</h5>
-                    <p class="mb-0" style="color: #333;">{{ order.customer_feedback }}</p>
-                </div>
-                {% endif %}
-            {% else %}
-                <form method="post" action="{% url 'order_tracking' order.order_number %}">
-                    {% csrf_token %}
-                    <div style="margin-bottom: 1.5rem;">
-                        <label class="form-label fw-semibold">Your rating</label>
-                        <div class="d-flex gap-2 align-items-center">
-                            {% for value in "54321" %}
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="rating" id="rating{{ value }}" value="{{ value }}">
-                                <label class="form-check-label" for="rating{{ value }}">{{ value }}</label>
-                            </div>
+                <div style="background: white; padding: 2rem; border-radius: 10px; border-left: 5px solid #10b981;">
+                    <p class="mb-3" style="color: #10b981; font-weight: bold;"><i class="fas fa-check-circle me-2"></i>Thank you for your rating!</p>
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 2.5rem; font-weight: bold;">{{ order.customer_rating }}</h3>
+                            <p style="margin: 0; color: #6b7280; font-size: 0.9rem;">out of 5</p>
+                        </div>
+                        <div style="font-size: 2rem; color: #fbbf24;">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= order.customer_rating %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
                             {% endfor %}
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Comments</label>
-                        <textarea class="form-control" name="feedback" rows="3" placeholder="Tell us how we did..."></textarea>
+                    {% if order.customer_feedback %}
+                    <div style="background: #f3f4f6; padding: 1.25rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                        <h5 class="mb-2" style="color: #374151;">Your feedback</h5>
+                        <p class="mb-0" style="color: #1f2937; line-height: 1.6;">{{ order.customer_feedback }}</p>
                     </div>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">Submit Rating</button>
+                    {% endif %}
+                </div>
+            {% else %}
+                <form method="post" action="{% url 'order_tracking' order.order_number %}">
+                    {% csrf_token %}
+                    <div style="background: white; padding: 2rem; border-radius: 10px;">
+                        <div style="margin-bottom: 2rem;">
+                            <label class="form-label fw-semibold mb-3">How was your experience? <span style="color: #ef4444;">*</span></label>
+                            <div class="rating-stars" style="display: flex; gap: 1rem; font-size: 2.5rem;">
+                                {% for value in "54321" %}
+                                <input type="radio" name="rating" value="{{ value }}" id="star{{ value }}" style="display: none;" required>
+                                <label for="star{{ value }}" class="star-label" style="cursor: pointer; color: #d1d5db; transition: color 0.2s; margin: 0;">
+                                    <i class="fas fa-star"></i>
+                                </label>
+                                {% endfor %}
+                            </div>
+                            <p id="ratingValue" style="margin-top: 0.5rem; color: #6b7280; font-size: 0.9rem;">Select a rating</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tell us about your experience <span style="color: #ef4444;">*</span></label>
+                            <textarea class="form-control" name="feedback" rows="4" placeholder="What did you like? What could be improved? (Optional but appreciated!)" style="border-radius: 8px; border: 1px solid #d1d5db;"></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary rounded-pill px-5" style="font-weight: 600;">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Rating
+                            </button>
+                            <a href="{% url 'order_history' %}" class="btn btn-outline-secondary rounded-pill px-5">
+                                Skip
+                            </a>
+                        </div>
+                    </div>
                 </form>
             {% endif %}
         </div>
         {% endif %}
+
+        <style>
+            .star-label:hover,
+            .star-label:hover ~ .star-label {
+                color: #fbbf24;
+            }
+            
+            input[type="radio"]:checked ~ .star-label,
+            input[type="radio"]:checked ~ .star-label ~ .star-label {
+                color: #fbbf24;
+            }
+        </style>
+
+        <script>
+            document.querySelectorAll('.star-label').forEach(label => {
+                label.addEventListener('click', function() {
+                    const rating = this.previousElementSibling.value;
+                    const labels = {
+                        '5': '⭐⭐⭐⭐⭐ Excellent!',
+                        '4': '⭐⭐⭐⭐ Great!',
+                        '3': '⭐⭐⭐ Good',
+                        '2': '⭐⭐ Okay',
+                        '1': '⭐ Poor'
+                    };
+                    document.getElementById('ratingValue').textContent = labels[rating] || 'Select a rating';
+                });
+            });
+        </script>
 
         <!-- Need Help Section -->
         <div style="margin-top: 3rem; padding: 2rem; background: var(--bg-light); border-radius: 10px; text-align: center;">
@@ -202,7 +269,6 @@
             <a href="{% url 'order_history' %}" class="btn btn-secondary">← Back to Orders</a>
         </div>
             </div>
-        </div>
     </div>
 </div>
 {% endblock %}

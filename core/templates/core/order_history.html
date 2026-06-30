@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load custom_filters %}
 
 {% block title %}My Orders - yoni Fast Food Restaurant{% endblock %}
 
@@ -7,7 +8,6 @@
 <div class="container py-5">
     <div class="container-fluid py-4">
         <div class="row g-4">
-                <div class="col-lg-9 col-xl-10">
                 <div class="container py-5">
                     <!-- Header -->
                     <div class="text-center mb-5">
@@ -47,8 +47,25 @@
                                             </div>
                                         </div>
                                         <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                                            <h3 class="fw-bold text-primary mb-3">Le {{ order.total_amount|floatformat:0|intcomma }}</h3>
-                                            {% if order.estimated_time %}
+                                            <h3 class="fw-bold text-primary mb-3">Le {{ order.total_amount }}</h3>
+                                            {% if order.customer_rating > 0 %}
+                                            <div class="mb-3">
+                                                <div style="font-size: 1rem; color: #fbbf24; margin-bottom: 0.25rem;">
+                                                    {% for i in "12345" %}
+                                                        {% if forloop.counter <= order.customer_rating %}
+                                                            <i class="fas fa-star"></i>
+                                                        {% else %}
+                                                            <i class="far fa-star" style="opacity: 0.3;"></i>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                                <p class="text-muted small mb-0">{{ order.customer_rating }}/5</p>
+                                            </div>
+                                            {% elif order.status == 'delivered' %}
+                                            <p class="text-warning small mb-3">
+                                                <i class="fas fa-star me-1"></i>Not yet rated
+                                            </p>
+                                            {% elif order.estimated_time %}
                                             <p class="text-muted small mb-3">
                                                 <i class="fas fa-clock me-1"></i>Est: {{ order.estimated_time }} mins
                                             </p>
@@ -84,7 +101,6 @@
                     </div>
                     {% endif %}
                 </div>
-            </div>
         </div>
     </div>
 </div>

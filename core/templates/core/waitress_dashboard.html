@@ -19,7 +19,6 @@
 <div class="container-fluid py-4">
     <div class="row g-4">
         <!-- Main Content -->
-        <div class="col-lg-9 col-xl-10">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
@@ -134,7 +133,7 @@
                                     <h6 class="fw-bold mb-1">Table #{{ table.table_number }}</h6>
                                     <p class="text-muted small mb-2">Cap: {{ table.capacity }}</p>
                                     {% if table.status == 'occupied' %}
-                                        <p class="fw-bold text-primary mb-0">Le {{ table.current_bill|floatformat:0|intcomma }}</p>
+                                        <p class="fw-bold text-primary mb-0">Le {{ table.current_bill|intcomma }}</p>
                                     {% elif table.status == 'available' %}
                                         <a href="{% url 'restaurant_list' %}" class="btn btn-sm btn-primary rounded-pill">+ Assign</a>
                                     {% elif table.status == 'reserved' and table.reservation_time %}
@@ -203,7 +202,7 @@
                                     <td class="py-3 fw-semibold">#{{ order.order_number }}</td>
                                     <td class="py-3">{{ order.table.table_number|default:"N/A" }}</td>
                                     <td class="py-3">{{ order.items.count }} items</td>
-                                    <td class="py-3 fw-semibold text-primary">Le {{ order.total_amount|floatformat:0|intcomma }}</td>
+                                    <td class="py-3 fw-semibold text-primary">Le {{ order.total_amount|intcomma }}</td>
                                     <td class="py-3">
                                         <span class="badge bg-{% if order.status == 'pending' %}warning text-dark{% elif order.status == 'preparing' %}info{% else %}success{% endif %}">
                                             {{ order.get_status_display }}
@@ -218,7 +217,6 @@
                 </div>
             </div>
             {% endif %}
-        </div>
     </div>
 </div>
 {% endblock %}

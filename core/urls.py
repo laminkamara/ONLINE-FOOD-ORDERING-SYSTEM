@@ -29,7 +29,23 @@ urlpatterns = [
     path('dashboard/admin/', views.admin_dashboard, name='admin_dashboard'),
     path('dashboard/waitress/', views.waitress_dashboard, name='waitress_dashboard'),
     path('dashboard/customer/', views.customer_dashboard, name='customer_dashboard'),
+    path('dashboard/delivery/', views.delivery_dashboard, name='delivery_dashboard'),
+    path('dashboard/delivery/location/', views.delivery_update_location, name='delivery_update_location'),
+    path('dashboard/delivery/order/<int:order_id>/claim/', views.delivery_claim_order, name='delivery_claim_order'),
+    path('dashboard/delivery/order/<int:order_id>/update-status/', views.delivery_order_update_status, name='delivery_order_update_status'),
     
+    # Live Location Tracking
+    path('api/delivery/location/<int:order_id>/', views.get_delivery_location, name='get_delivery_location'),
+    path('api/customer/location/<str:order_number>/', views.get_customer_location, name='get_customer_location'),
+    path('api/order/<str:order_number>/update-location/', views.update_order_location, name='update_order_location'),
+    path('order/<str:order_number>/live-map/', views.order_live_map, name='order_live_map'),
+    path('order/<str:order_number>/upload-proof/', views.upload_delivery_proof, name='upload_delivery_proof'),
+
+    # Notifications
+    path('notifications/', views.notifications, name='notifications'),
+    path('notifications/unread/', views.notifications_unread_count, name='notifications_unread_count'),
+    path('notifications/<int:notification_id>/read/', views.mark_notification_read, name='mark_notification_read'),
+
     # Admin sidebar pages
     path('dashboard/users/', views.manage_users, name='manage_users'),
     path('dashboard/menu/', views.manage_menu, name='manage_menu'),
@@ -37,6 +53,9 @@ urlpatterns = [
     path('dashboard/payments/', views.manage_payments, name='manage_payments'),
     path('dashboard/reports/', views.view_reports, name='view_reports'),
     path('dashboard/settings/', views.dashboard_settings, name='dashboard_settings'),
+    path('dashboard/reviews/', views.manage_reviews, name='manage_reviews'),
+    path('dashboard/reviews/<int:orderitem_id>/edit/', views.manage_review_edit, name='manage_review_edit'),
+    path('dashboard/reviews/<int:orderitem_id>/delete/', views.manage_review_delete, name='manage_review_delete'),
     
     # Customer sidebar pages
     path('dashboard/customer/orders/', views.customer_orders, name='customer_orders'),
@@ -80,6 +99,7 @@ urlpatterns = [
     path('order/<int:order_id>/edit/', views.order_edit, name='order_edit'),
     path('order/<int:order_id>/delete/', views.order_delete, name='order_delete'),
     path('order/<int:order_id>/update-status/', views.order_update_status, name='order_update_status'),
+    path('order/<int:order_id>/assign/', views.assign_order, name='order_assign'),
     
     # CRUD Operations - Categories
     path('category/create/', views.category_create, name='category_create'),

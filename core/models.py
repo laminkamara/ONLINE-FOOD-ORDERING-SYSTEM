@@ -7,6 +7,26 @@ class Customer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='customer')
     phone = models.CharField(max_length=15, blank=True)
     address = models.TextField(blank=True)
+    profile_photo = models.ImageField(upload_to='profile_photos/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.user.username
+
+
+class DeliveryPerson(models.Model):
+    STATUS_CHOICES = [
+        ('available', 'Available'),
+        ('on_delivery', 'On Delivery'),
+        ('offline', 'Offline'),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='delivery_person')
+    phone = models.CharField(max_length=15, blank=True)
+    profile_photo = models.ImageField(upload_to='profile_photos/', blank=True, null=True)
+    current_latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    current_longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -71,6 +91,7 @@ class Table(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=100)
     icon = models.CharField(max_length=50)
+    icon_image = models.ImageField(upload_to='category_icons/', blank=True, null=True)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -175,6 +196,7 @@ class Order(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='orders')
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True)
     table = models.ForeignKey(Table, on_delete=models.SET_NULL, null=True, blank=True)
+    delivery_person = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_orders')
     delivery_address = models.TextField()
     phone = models.CharField(max_length=15)
     order_number = models.CharField(max_length=20, unique=True)
@@ -189,6 +211,9 @@ class Order(models.Model):
     customer_feedback = models.TextField(blank=True)
     estimated_time = models.PositiveIntegerField(default=30)
     notes = models.TextField(blank=True)
+    customer_latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    customer_longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    delivery_proof = models.ImageField(upload_to='delivery_proof/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -237,6 +262,19 @@ class ChatMessage(models.Model):
     
     def __str__(self):
         return f"{self.sender.username}: {self.message[:50]}"
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    message = models.CharField(max_length=255)
+    url = models.CharField(max_length=255, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for {self.user.username}: {self.message[:50]}"
 
 
 class Payment(models.Model):

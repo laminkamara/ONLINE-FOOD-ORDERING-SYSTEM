@@ -5,21 +5,19 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <div class="row g-4">
-        <!-- Main Content -->
-        <div class="col-lg-9 col-xl-10">
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h1 class="fw-bold mb-2">
-                        <i class="fas fa-clipboard-list text-primary me-2"></i>Order Queue
-                    </h1>
-                    <p class="text-muted mb-0">Manage incoming and active orders</p>
-                </div>
-                <a href="{% url 'waitress_dashboard' %}" class="btn btn-outline-primary rounded-pill">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
-                </a>
-            </div>
+    <!-- Main Content -->
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold mb-2">
+                <i class="fas fa-clipboard-list text-primary me-2"></i>Order Queue
+            </h1>
+            <p class="text-muted mb-0">Manage incoming and active orders</p>
+        </div>
+        <a href="{% url 'waitress_dashboard' %}" class="btn btn-outline-primary rounded-pill">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
 
             <!-- Stats Cards -->
             <div class="row g-4 mb-4">
@@ -126,7 +124,7 @@
                                 </p>
                             </div>
                             <div class="d-flex justify-content-between align-items-center pt-3 border-top flex-wrap gap-2">
-                                <h5 class="fw-bold text-primary mb-0">Le {{ order.total_amount|floatformat:0|intcomma }}</h5>
+                                <h5 class="fw-bold text-primary mb-0">Le {{ order.total_amount|intcomma }}</h5>
                                 <div class="d-flex gap-2">
                                     <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-outline-primary rounded-pill">
                                         View Details <i class="fas fa-arrow-right ms-1"></i>

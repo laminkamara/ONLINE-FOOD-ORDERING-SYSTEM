@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load custom_filters %}
 
 {% block title %}Manage Menu - yoni Fast Food Restaurant{% endblock %}
 
@@ -7,7 +8,6 @@
 <div class="container-fluid py-4">
     <div class="row g-4">
         <!-- Main Content -->
-        <div class="col-lg-9 col-xl-10">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
@@ -137,7 +137,7 @@
                             <h5 class="modal-title fw-bold">Edit Category</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <form method="post" action="{% url 'category_edit' category.id %}">
+                        <form method="post" action="{% url 'category_edit' category.id %}" enctype="multipart/form-data">
                             {% csrf_token %}
                             <div class="modal-body">
                                 <div class="mb-3">
@@ -146,11 +146,30 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Icon</label>
-                                    <input type="text" name="icon" class="form-control" value="{{ category.icon }}">
+                                    <input type="hidden" name="icon" value="{{ category.icon }}" class="category-icon-input">
+                                    <div class="icon-picker d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-outline-secondary icon-choice {% if 'fas fa-utensils' == category.icon %}active{% endif %}" data-icon="fas fa-utensils"><i class="fas fa-utensils"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary icon-choice {% if 'fas fa-hamburger' == category.icon %}active{% endif %}" data-icon="fas fa-hamburger"><i class="fas fa-hamburger"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary icon-choice {% if 'fas fa-pizza-slice' == category.icon %}active{% endif %}" data-icon="fas fa-pizza-slice"><i class="fas fa-pizza-slice"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary icon-choice {% if 'fas fa-ice-cream' == category.icon %}active{% endif %}" data-icon="fas fa-ice-cream"><i class="fas fa-ice-cream"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary icon-choice {% if 'fas fa-coffee' == category.icon %}active{% endif %}" data-icon="fas fa-coffee"><i class="fas fa-coffee"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary icon-choice {% if 'fas fa-fish' == category.icon %}active{% endif %}" data-icon="fas fa-fish"><i class="fas fa-fish"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary icon-choice {% if 'fas fa-drumstick-bite' == category.icon %}active{% endif %}" data-icon="fas fa-drumstick-bite"><i class="fas fa-drumstick-bite"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary icon-choice {% if 'fas fa-bread-slice' == category.icon %}active{% endif %}" data-icon="fas fa-bread-slice"><i class="fas fa-bread-slice"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary icon-choice {% if 'fas fa-apple-alt' == category.icon %}active{% endif %}" data-icon="fas fa-apple-alt"><i class="fas fa-apple-alt"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary icon-choice {% if 'fas fa-wine-glass' == category.icon %}active{% endif %}" data-icon="fas fa-wine-glass"><i class="fas fa-wine-glass"></i></button>
+                                    </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Description</label>
                                     <textarea name="description" class="form-control" rows="3">{{ category.description }}</textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Upload Icon (optional)</label>
+                                    <input type="file" name="icon_image" class="form-control">
+                                    {% if category.icon_image %}
+                                    <p class="small text-muted mt-2">Current image: <a href="{{ category.icon_image.url }}" target="_blank">View</a></p>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -224,7 +243,7 @@
                                         <span class="badge bg-secondary">{{ item.category.name }}</span>
                                     </p>
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h5 class="fw-bold text-primary mb-0">Le {{ item.price|floatformat:0|intcomma }}</h5>
+                                        <h5 class="fw-bold text-primary mb-0">Le {{ item.price }}</h5>
                                         {% if item.is_available %}
                                             <span class="badge bg-success">Available</span>
                                         {% else %}
@@ -234,6 +253,9 @@
                                     <div class="d-flex gap-2">
                                         <button type="button" class="btn btn-sm btn-outline-primary rounded-pill flex-fill" data-bs-toggle="modal" data-bs-target="#editMenuItemModal{{ item.id }}">
                                             <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill flex-fill" data-bs-toggle="modal" data-bs-target="#reviewsModal{{ item.id }}">
+                                            <i class="fas fa-comments"></i> Reviews
                                         </button>
                                         <button type="button" class="btn btn-sm btn-outline-danger rounded-pill flex-fill" data-bs-toggle="modal" data-bs-target="#deleteMenuItemModal{{ item.id }}">
                                             <i class="fas fa-trash"></i> Delete
@@ -349,7 +371,46 @@
                 </div>
             </div>
             {% endfor %}
-        </div>
+
+            {% for item in menu_items %}
+            <div class="modal fade" id="reviewsModal{{ item.id }}" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">Reviews for {{ item.name }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            {% if item.reviews and item.reviews|length > 0 %}
+                                <div class="list-group">
+                                    {% for oi in item.reviews %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <strong>{{ oi.order.customer.user.get_full_name|default:oi.order.customer.user.username }}</strong>
+                                                <div class="small text-muted">Order: {{ oi.order.order_number }} — {{ oi.order.created_at|date:"Y-m-d H:i" }}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-bold">Rating: {{ oi.order.customer_rating }}/5</div>
+                                            </div>
+                                        </div>
+                                        {% if oi.order.customer_feedback %}
+                                        <p class="mt-2 mb-0">{{ oi.order.customer_feedback }}</p>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted">No reviews yet for this item.</p>
+                            {% endif %}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
     </div>
 </div>
 
@@ -436,20 +497,36 @@
                 <h5 class="modal-title fw-bold">Add New Category</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="{% url 'category_create' %}">
+            <form method="post" action="{% url 'category_create' %}" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Name</label>
                         <input type="text" name="name" class="form-control" required>
                     </div>
-                    <div class="mb-3">
+                        <div class="mb-3">
                         <label class="form-label fw-semibold">Icon</label>
-                        <input type="text" name="icon" class="form-control" placeholder="fas fa-utensils">
+                        <input type="hidden" name="icon" value="fas fa-utensils" id="newCategoryIcon">
+                        <div class="icon-picker d-flex flex-wrap gap-2" id="newCategoryIconPicker">
+                            <button type="button" class="btn btn-outline-secondary icon-choice" data-icon="fas fa-utensils"><i class="fas fa-utensils"></i></button>
+                            <button type="button" class="btn btn-outline-secondary icon-choice" data-icon="fas fa-hamburger"><i class="fas fa-hamburger"></i></button>
+                            <button type="button" class="btn btn-outline-secondary icon-choice" data-icon="fas fa-pizza-slice"><i class="fas fa-pizza-slice"></i></button>
+                            <button type="button" class="btn btn-outline-secondary icon-choice" data-icon="fas fa-ice-cream"><i class="fas fa-ice-cream"></i></button>
+                            <button type="button" class="btn btn-outline-secondary icon-choice" data-icon="fas fa-coffee"><i class="fas fa-coffee"></i></button>
+                            <button type="button" class="btn btn-outline-secondary icon-choice" data-icon="fas fa-fish"><i class="fas fa-fish"></i></button>
+                            <button type="button" class="btn btn-outline-secondary icon-choice" data-icon="fas fa-drumstick-bite"><i class="fas fa-drumstick-bite"></i></button>
+                            <button type="button" class="btn btn-outline-secondary icon-choice" data-icon="fas fa-bread-slice"><i class="fas fa-bread-slice"></i></button>
+                            <button type="button" class="btn btn-outline-secondary icon-choice" data-icon="fas fa-apple-alt"><i class="fas fa-apple-alt"></i></button>
+                            <button type="button" class="btn btn-outline-secondary icon-choice" data-icon="fas fa-wine-glass"><i class="fas fa-wine-glass"></i></button>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Description</label>
                         <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Upload Icon (optional)</label>
+                        <input type="file" name="icon_image" class="form-control">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -471,5 +548,42 @@ document.getElementById('searchInput').addEventListener('keyup', function() {
         card.style.display = card.textContent.toLowerCase().includes(filter) ? '' : 'none';
     });
 });
+</script>
+<script>
+// Icon picker behavior: works for create modal and any edit modals
+document.querySelectorAll('.icon-choice').forEach(btn => {
+    btn.addEventListener('click', function() {
+        // Find nearest modal to set the hidden input, otherwise use newCategoryIcon
+        const icon = this.dataset.icon;
+        // remove active from siblings in same picker
+        const parent = this.parentElement;
+        parent.querySelectorAll('.icon-choice').forEach(s => s.classList.remove('active'));
+        this.classList.add('active');
+
+        // Try to find hidden input within same modal
+        let modal = this.closest('.modal');
+        if (modal) {
+            const hidden = modal.querySelector('.category-icon-input') || modal.querySelector('input[name="icon"]');
+            if (hidden) hidden.value = icon;
+        } else {
+            const newHidden = document.getElementById('newCategoryIcon');
+            if (newHidden) newHidden.value = icon;
+        }
+    });
+});
+
+// Initialize active states for existing modals and picker based on hidden inputs
+document.querySelectorAll('.modal').forEach(modalEl => {
+    const hidden = modalEl.querySelector('.category-icon-input') || modalEl.querySelector('input[name="icon"]');
+    if (!hidden) return;
+    const val = hidden.value;
+    modalEl.querySelectorAll('.icon-choice').forEach(b => b.classList.toggle('active', b.dataset.icon === val));
+});
+// Also initialize new category picker
+const newHidden = document.getElementById('newCategoryIcon');
+if (newHidden) {
+    const val = newHidden.value;
+    document.querySelectorAll('#newCategoryIconPicker .icon-choice').forEach(b => b.classList.toggle('active', b.dataset.icon === val));
+}
 </script>
 {% endblock %}

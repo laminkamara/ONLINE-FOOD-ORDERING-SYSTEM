@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load custom_filters %}
 
 {% block title %}My Dashboard - yoni Fast Food Restaurant{% endblock %}
 
@@ -52,7 +53,7 @@
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-money-bill-wave fa-3x me-3 opacity-50"></i>
                                 <div>
-                                    <h3 class="fw-bold mb-0">Le {{ total_spent|floatformat:0|intcomma }}</h3>
+                                    <h3 class="fw-bold mb-0">Le {{ total_spent }}</h3>
                                     <p class="mb-0 small opacity-75">Total Spent</p>
                                 </div>
                             </div>
@@ -159,7 +160,7 @@
                                     <td class="py-3 fw-semibold">#{{ order.order_number }}</td>
                                     <td class="py-3">{{ order.created_at|date:"M d, Y" }}</td>
                                     <td class="py-3">{{ order.items.count }} items</td>
-                                    <td class="py-3 fw-semibold text-primary">Le {{ order.total_amount|floatformat:0|intcomma }}</td>
+                                    <td class="py-3 fw-semibold text-primary">Le {{ order.total_amount }}</td>
                                     <td class="py-3">
                                         {% if order.status == 'delivered' %}
                                             <span class="badge bg-success">Delivered</span>

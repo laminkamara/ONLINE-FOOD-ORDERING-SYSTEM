@@ -7,7 +7,6 @@
 <div class="container-fluid py-4">
     <div class="row g-4">
         <!-- Main Content -->
-        <div class="col-lg-9 col-xl-10">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
@@ -109,10 +108,12 @@
                                         <td class="py-3">
                                             {% if role == 'superuser' %}
                                                 <span class="badge bg-danger">Superuser</span>
+                                            {% elif role == 'delivery' %}
+                                                <span class="badge bg-warning text-dark">Delivery</span>
                                             {% elif role == 'waitress' %}
                                                 <span class="badge bg-info">Waitress</span>
                                             {% elif role == 'staff' %}
-                                                <span class="badge bg-warning text-dark">Staff</span>
+                                                <span class="badge bg-secondary">Staff</span>
                                             {% else %}
                                                 <span class="badge bg-info">Customer</span>
                                             {% endif %}
@@ -152,7 +153,6 @@
                     </div>
                 </div>
             </div>
-        </div>
     </div>
 </div>
 
@@ -185,6 +185,7 @@
                             <select name="role" class="form-select">
                                 <option value="customer" {% if role == 'customer' %}selected{% endif %}>Customer</option>
                                 <option value="waitress" {% if role == 'waitress' %}selected{% endif %}>Waitress</option>
+                                <option value="delivery" {% if role == 'delivery' %}selected{% endif %}>Delivery</option>
                                 <option value="superuser" {% if role == 'superuser' %}selected{% endif %}>Admin (Superuser)</option>
                             </select>
                         </div>
@@ -261,6 +262,7 @@
                         <select name="role" class="form-select">
                             <option value="customer">Customer</option>
                             <option value="waitress">Waitress</option>
+                            <option value="delivery">Delivery</option>
                             <option value="superuser">Admin (Superuser)</option>
                         </select>
                     </div>
